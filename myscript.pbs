@@ -1,0 +1,9 @@
+#!/bin/bash -l
+#PBS -l walltime=0:20:00,nodes=1:ppn=1
+#PBS -m abe
+#PBS -j oe
+#PBS -A your project ID
+#PBS -M your email address
+cd iS3D
+sh cleanMakeCPU.sh
+./iS3D.e
