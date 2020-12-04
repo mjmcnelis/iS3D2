@@ -6,10 +6,16 @@
 #include "particle.h"
 #include <cmath>
 
-const double hbarC = 0.197327053;  //GeV*fm
+
+// define OPENMP macro? or make a new header file?
+
+
+// constants
+const double hbarC = 0.197327053;   // GeV.fm
 const double two_pi = 2.0 * M_PI;
 const double two_pi2_hbarC3 = 2.0 * pow(M_PI, 2) * pow(hbarC, 3);
 const double four_pi2_hbarC3 = 4.0 * pow(M_PI, 2) * pow(hbarC, 3);
+
 
 //TO DO remove these hardcoded entries and declare a std::vector<particle_info> which can be appended
 const int Maxparticle = 600; //size of array for storage of the particles

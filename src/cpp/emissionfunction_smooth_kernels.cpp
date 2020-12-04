@@ -433,7 +433,11 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
     if(remainder != 0) FO_chunk++;
 
     double detA_min = DETA_MIN;   // default value for minimum detA
-    //long breakdown = 0;           // # times feqmod breaks down
+    long breakdown = 0;           // number of times feqmod breaks down
+    double tau_breakdown = 0;     // tau until feqmod stops breaking down
+
+    long pl_negative = 0;         // number of times pl < 0
+    double tau_pl = 0;            // tau until pl > 0
 
     // phi arrays
     double cosphiValues[phi_tab_length];
@@ -569,7 +573,11 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
 
         double bulkPi = 0.0;                // bulk pressure (GeV/fm^3)
 
-        if(INCLUDE_BULK_DELTAF) bulkPi = bulkPi_fo[icell_glb];
+        if(INCLUDE_BULK_DELTAF)
+        {
+          bulkPi = bulkPi_fo[icell_glb];
+        }
+
 
         double muB = 0.0;                       // baryon chemical potential (GeV)
         double alphaB = 0.0;                    // muB / T
@@ -599,9 +607,30 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
         {
           double bulkPi_over_Peq_max = df_data->bulkPi_over_Peq_max;
 
-          if(bulkPi < - P) bulkPi = - (1.0 - 1.e-5) * P;
-          else if(bulkPi / P > bulkPi_over_Peq_max) bulkPi = P * (bulkPi_over_Peq_max - 1.e-5);
+          if(bulkPi < - P)
+          {
+            bulkPi = - (1.0 - 1.e-5) * P;
+          }
+          else if(bulkPi / P > bulkPi_over_Peq_max)
+          {
+            bulkPi = P * (bulkPi_over_Peq_max - 1.e-5);
+          }
         }
+
+
+        // check if pl went negative
+        double zt = tau * un / utperp;
+        double zn = ut / (tau * utperp);
+        double pl = P  +  bulkPi  +  zt * zt * pitt  +  tau2 * tau2 * zn * zn * pinn  +  2. * tau2 * zt * zn * pitn;
+
+        #pragma omp critical
+        if(pl < 0)
+        {
+          pl_negative++;
+          tau_pl = tau;
+        }
+
+
 
         // set df coefficients
         deltaf_coefficients df = df_data->evaluate_df_coefficients(T, muB, E, P, bulkPi);
@@ -673,7 +702,10 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
         double shear_mod = 0.5 / betapi;
         double bulk_mod = bulkPi / (3.0 * betabulk);
 
-        if(DF_MODE == 4) bulk_mod = lambda;
+        if(DF_MODE == 4)
+        {
+          bulk_mod = lambda;
+        }
 
         double Axx = 1.0  +  pixx_LRF * shear_mod  +  bulk_mod;
         double Axy = pixy_LRF * shear_mod;
@@ -727,14 +759,12 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
         // determine if feqmod breaks down
         bool feqmod_breaks_down = does_feqmod_breakdown(MASS_PION0, T, F, bulkPi, betabulk, detA, detA_min, z, laguerre, DF_MODE, 0, T, F, betabulk);
 
-        // if(feqmod_breaks_down)
-        // {
-        //   #pragma omp critical
-        //   {
-        //     breakdown++;
-        //     cout << setw(5) << setprecision(4) << "feqmod breaks down at " << breakdown << " / " << FO_length << " cell at tau = " << tau << " fm/c:" << "\t detA = " << detA << "\t detA_min = " << detA_min << endl;
-        //   }
-        // }
+        #pragma omp critical
+        if(feqmod_breaks_down)
+        {
+          breakdown++;
+          tau_breakdown = tau;
+        }
 
         // uniformly rescale eta space by detA if modified momentum space elements are shrunk
         // this rescales the dsigma components orthogonal to the eta direction (only works for 2+1d, y = 0)
@@ -1008,6 +1038,9 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
 
     } // particle species (ipart)
 
+
+    printf("\nfeqmod breaks down for %ld / %ld cells until t = %.3f fm/c\n", breakdown, FO_length, tau_breakdown);
+    printf("pl went negative for %ld / %ld cells until t = %.3f fm/c\n\n", pl_negative, FO_length, tau_pl);
 
     //free memory
     free(dN_pTdpTdphidy_all);

@@ -134,13 +134,19 @@ bool does_feqmod_breakdown(double mass_pion0, double T, double F, double bulkPi,
 
     bool pion_density_negative = is_linear_pion0_density_negative(T, neq_pion0, J20_pion0, bulkPi, F, betabulk);
 
-    if(detA <= detA_min || pion_density_negative) return true;
+    if(detA <= detA_min || pion_density_negative)
+    {
+      return true;
+    }
   }
   else if(df_mode == 4)
   {
     //if(z < 0.0) printf("Error: z should be positive");
 
-    if(detA <= detA_min || z < 0.0) return true;
+    if(detA <= detA_min || z < 0.0)
+    {
+      return true;
+    }
   }
 
   return false;
@@ -1355,23 +1361,11 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
     //write the results to file
     if(OPERATION == 1)
     {
-      //write_dN_pTdpTdphidy_toFile(MCID);
+      write_dN_pTdpTdphidy_toFile(MCID);
       write_continuous_vn_toFile(MCID);
       write_dN_twopipTdpTdy_toFile(MCID);
-      //write_dN_dphidy_toFile(MCID);
-      //write_dN_dy_toFile(MCID);
-
-      // option to do resonance decays option
-      //if(DO_RESONANCE_DECAYS)
-      //{
-        // call resonance decays routine
-        //do_resonance_decays(particles);
-
-        // write amended spectra from resonance decays to file
-        // currently, unstable particles are still included (should change)
-        //write_dN_pTdpTdphidy_with_resonance_decays_toFile();
-        //write_dN_dpTdphidy_with_resonance_decays_toFile();
-      //}
+      write_dN_dphidy_toFile(MCID);
+      write_dN_dy_toFile(MCID);
     }
 
     if(MODE == 5) write_polzn_vector_toFile();

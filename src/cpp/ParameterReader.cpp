@@ -157,10 +157,18 @@ double ParameterReader::getVal(string name)
 
 //----------------------------------------------------------------------
 void ParameterReader::echo()
-/*
-  Print out all stored parameters to screen.
-*/
 {
-  if (names->size()==0) return;
-  for (long ii=0; ii<names->size(); ii++) cout << (*names)[ii] << " = " << (*values)[ii] << "  " << endl;
+  if(names->size() == 0)
+  {
+    return;
+  }
+
+  for(long i = 0; i < names->size(); i++)
+  {
+    cout << (*names)[i] << " = " << (*values)[i] << endl;    // print parameters
+  }
 }
+
+
+
+

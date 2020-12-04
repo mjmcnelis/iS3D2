@@ -299,6 +299,8 @@ void Deltaf_Data::compute_jonah_coefficients(particle_info * particle_data, int 
 
 void Deltaf_Data::construct_cubic_splines()
 {
+  printf("\nConstructing cubic splines for temperature-dependent (muB = 0) df coefficients...");
+
   // Allocate memory for cubic splines
   c0_spline = gsl_spline_alloc(gsl_interp_cspline, points_T);
   c2_spline = gsl_spline_alloc(gsl_interp_cspline, points_T);
@@ -318,7 +320,6 @@ void Deltaf_Data::construct_cubic_splines()
   gsl_spline_init(betabulk_spline, T_array, betabulk_data[0], points_T);
   gsl_spline_init(betaV_spline, T_array, betaV_data[0], points_T);
   gsl_spline_init(betapi_spline, T_array, betapi_data[0], points_T);
-
 }
 
 
@@ -517,6 +518,10 @@ void Deltaf_Data::test_df_coefficients(double bulkPi_over_P)
   double muB = QGP.baryon_chemical_potential;
   double bulkPi = bulkPi_over_P * P;
 
+
+  printf("\nTesting df coefficients for Pi/Peq = %lf\n", bulkPi_over_P);     // * * ADD THIS * * //
+
+
   deltaf_coefficients df = evaluate_df_coefficients(T, muB, E, P, bulkPi);
 
   if(df_mode == 1)
@@ -538,6 +543,10 @@ void Deltaf_Data::compute_particle_densities(particle_info * particle_data, int 
   // get the average temperature, energy density, pressure, etc.
   Plasma QGP;
   QGP.load_thermodynamic_averages();
+
+
+  printf("\nComputing particle densities...\n");    // * * ADD THIS * * //
+
 
   const double T = QGP.temperature;    // GeV
   const double E = QGP.energy_density; // GeV / fm^3

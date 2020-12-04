@@ -78,6 +78,9 @@ typedef struct
 
 typedef struct
 {
+  // I'll need to reorganize this...
+
+
    double tau, x, y, eta; //contravariant spacetime position
    double dat, dax, day, dan; //COVARIANT surface normal vector
    double ut, ux, uy, un; //contravariant flow velocity
@@ -89,6 +92,11 @@ typedef struct
 
    double wtx, wty, wtn, wxy, wxn, wyn; //the 6 components of the antisymmetric thermal vorticity with contravariant components w^\mu\nu
 
+
+
+
+   // get rid of this
+
    //quantities exclusive to VAH
    double PL; //longitudinal pressure
    double PT; //transverse pressure
@@ -97,14 +105,13 @@ typedef struct
    double aL, aT; // longitudinal and transverse momentum anisotropy parameters
    double upsilonB; //effective baryon chemical potential
    double nBL; //LRF longitudinal baryon diffusion
-
    double c0,c1,c2,c3,c4; // for vah every FO has different delta-f coefficients
 
 } FO_surf;
 
 typedef struct
 {
-  //  Coefficients of 14 moment approximation (vhydro)
+  // coefficients of Grad 14-moment approximation (vh)
   // df ~ ((c0-c2)m^2 + b.c1(u.p) + (4c2-c0)(u.p)^2).Pi + (b.c3 + c4(u.p))p_u.V^u + c5.p_u.p_v.pi^uv
   double c0;
   double c1;
@@ -113,7 +120,7 @@ typedef struct
   double c4;
   double shear14_coeff;
 
-  //  Coefficients of Chapman Enskog expansion (vhydro)
+  // coefficients of RTA Chapman-Enskog expansion (vh)
   // df ~ ((c0-c2)m^2 + b.c1(u.p) + (4c2-c0)(u.p)^2).Pi + (b.c3 + c4(u.p))p_u.V^u + c5.p_u.p_v.pi^uv
   double F;
   double G;
@@ -121,14 +128,14 @@ typedef struct
   double betaV;
   double betapi;
 
-  // Jonah coefficients
+  // PTB exclusive coefficients (vh)
   double lambda;
   double z;
 
   double delta_lambda;    // linearize lambda = 0 + delta_lambda
   double delta_z;         // linearize z = 1 + delta_z
 
-} deltaf_coefficients;
+} deltaf_coefficients;    // df coefficients for df corrections (vh)
 
 
 const int max_digits = 10;  // max number of mcid digits (goes up to nuclei)
@@ -166,14 +173,14 @@ class read_mcid
 
     read_mcid(long int mcid_in);
 
-    void is_particle_a_deuteron();// determine if particle is a deuteron
-    void is_particle_a_hadron();  // determine if particle is a hadron
-    void is_particle_a_meson();
-    void is_particle_a_baryon();  // determine if the hadron is a baryon
-    void get_baryon();            // get the baryon number
-    void get_spin();              // get the spin x 2
-    void get_gspin();             // get the spin degeneracy
-    void get_sign();              // get the quantum statistics sign
+    void is_particle_a_deuteron();                    // determine if particle is a deuteron
+    void is_particle_a_hadron();                      // determine if particle is a hadron
+    void is_particle_a_meson();                       // determine if particle is a meson
+    void is_particle_a_baryon();                      // determine if the hadron is a baryon
+    void get_baryon();                                // get the baryon number
+    void get_spin();                                  // get the spin x 2
+    void get_gspin();                                 // get the spin degeneracy
+    void get_sign();                                  // get the quantum statistics sign
     void does_particle_have_distinct_antiparticle();  // determine if there's a distinct antiparticle
 
 };
@@ -183,34 +190,26 @@ class FO_data_reader
 {
     private:
         ParameterReader* paraRdr;
-        string pathToInput;
-        int mode; //type of freezeout surface, VH or VAH
-        int dimension; // added on 7/16
-        int df_mode;
-        int include_baryon; //switch to turn on/off baryon chemical potential
-        int include_bulk_deltaf; //switch to turn on/off (\delta)f correction from bulk viscosity
-        int include_shear_deltaf; //switch to turn on/off (\delta)f correction from shear viscosity
-        int include_baryondiff_deltaf; //switch to turn on/off (\delta)f correction from baryon diffusion
+        int mode;                   // hydro code that constructed freezeout surface
+        int dimension;              // dimension of freezeout surface
+        int include_baryon;         // switch to include baryon chemical potential
+        int number_of_cells;        // number of freezeout cells in freezeout surface file
 
     public:
         FO_data_reader(ParameterReader * paraRdr_in, string pathToInput);
         ~FO_data_reader();
 
         int get_number_cells();
-        void read_surf_switch(long length, FO_surf * surf_ptr);
-        void read_surf_VH_old(long length, FO_surf * surf_ptr);
-        void read_surf_VH(long length, FO_surf * surf_ptr);
-        void read_surf_VH_Vorticity(long length, FO_surf * surf_ptr);
-        void read_surf_VAH_PLMatch(long length, FO_surf * surf_ptr);
-        void read_surf_VAH_PLPTMatch(long length, FO_surf * surf_ptr);
-        void read_surf_VH_MUSIC(long length, FO_surf * surf_ptr);
-        void read_surf_VH_MUSIC_New(long length, FO_surf* surf_ptr);
-        void read_surf_VH_hiceventgen(long length, FO_surf* surf_ptr);
+
+        void read_freezeout_surface(FO_surf * surf_ptr);
+        void read_surface_cpu_vh(FO_surf * surf_ptr);       // 1 (or 5 to include thermal vorticity)
+        void read_surface_music(FO_surf* surf_ptr);         // 6
+        void read_surface_hic_eventgen(FO_surf* surf_ptr);  // 7
 };
 
 
 class PDG_Data
-{ 
+{
   private:
     ParameterReader * paraRdr;
     int hrg_eos;

@@ -5,6 +5,7 @@
 #include <sstream>
 #include <stdlib.h>
 #include <cmath>
+#include<cpuid.h>
 #include <iomanip>
 #include <cstdarg>
 #include <stdio.h> //for printf
@@ -14,7 +15,32 @@ using namespace std;
 
 void printline()
 {
-  cout << "______________________________\n" << endl;
+  cout << "\n--------------------------------------------------\n" << endl;
+}
+
+void print_processor()
+{
+  char CPUBrandString[0x40];              // routine was found online
+  unsigned int CPUInfo[4] = {0,0,0,0};
+
+  __cpuid(0x80000000, CPUInfo[0], CPUInfo[1], CPUInfo[2], CPUInfo[3]);
+  unsigned int nExIds = CPUInfo[0];
+
+  memset(CPUBrandString, 0, sizeof(CPUBrandString));
+
+  for (unsigned int i = 0x80000000; i <= nExIds; ++i)
+  {
+      __cpuid(i, CPUInfo[0], CPUInfo[1], CPUInfo[2], CPUInfo[3]);
+
+      if (i == 0x80000002)
+          memcpy(CPUBrandString, CPUInfo, sizeof(CPUInfo));
+      else if (i == 0x80000003)
+          memcpy(CPUBrandString + 16, CPUInfo, sizeof(CPUInfo));
+      else if (i == 0x80000004)
+          memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
+  }
+
+  printf("\n\nProcessor = %s\n\n", CPUBrandString);
 }
 
 //**********************************************************************
@@ -1214,7 +1240,7 @@ void matrix_multiplication(double ** A, const double x[], double y[], int n, int
   for(int i = 0; i < n; i++)    // rows
   {
     // initialize to zero
-    y[i] = 0.0; 
+    y[i] = 0.0;
 
     for(int j = 0; j < m; j++)  // columns
     {
@@ -1229,7 +1255,7 @@ void vector_copy(const double a[], double c[], int n)
   for(int i = 0; i < n; i++)
   {
     c[i] = a[i];
-  } 
+  }
 }
 
 void vector_addition(const double a[], const double b[], double c[], int n)
@@ -1238,7 +1264,7 @@ void vector_addition(const double a[], const double b[], double c[], int n)
   for(int i = 0; i < n; i++)
   {
     c[i] = a[i] + b[i];
-  } 
+  }
 }
 
 void vector_subtraction(const double a[], const double b[], double c[], int n)
@@ -1247,7 +1273,7 @@ void vector_subtraction(const double a[], const double b[], double c[], int n)
   for(int i = 0; i < n; i++)
   {
     c[i] = a[i] - b[i];
-  } 
+  }
 }
 
 // for deallocating 2D matrices
