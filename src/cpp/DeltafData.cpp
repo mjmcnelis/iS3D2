@@ -11,7 +11,7 @@
 #include <gsl/gsl_interp.h>
 
 #include "iS3D.h"
-#include "deltafReader.h"
+#include "DeltafData.h"
 #include "ParameterReader.h"
 #include "readindata.h"
 

@@ -19,7 +19,7 @@
 #include "Stopwatch.h"
 #include "Arsenal.h"
 #include "ParameterReader.h"
-#include "deltafReader.h"
+#include "DeltafData.h"
 #include <gsl/gsl_sf_bessel.h> //for modified bessel functions
 #include "gaussThermal.h"
 #include "particle.h"

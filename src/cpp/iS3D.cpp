@@ -15,7 +15,7 @@
 #include "emissionfunction.h"
 #include "Arsenal.h"
 #include "ParameterReader.h"
-#include "deltafReader.h"
+#include "DeltafData.h"
 
 
 IS3D::IS3D()

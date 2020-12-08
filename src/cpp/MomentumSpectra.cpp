@@ -23,7 +23,7 @@
 #include "Arsenal.h"
 #include "Macros.h"
 #include "ParameterReader.h"
-#include "deltafReader.h"
+#include "DeltafData.h"
 #include <gsl/gsl_sf_bessel.h> //for modified bessel functions
 #include <gsl/gsl_linalg.h>
 #include "gaussThermal.h"

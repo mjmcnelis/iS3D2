@@ -7,7 +7,7 @@
 #include "Table.h"
 #include "iS3D.h"
 #include "ParameterReader.h"
-#include "deltafReader.h"
+#include "DeltafData.h"
 #include "particle.h"
 #include "viscous_correction.h"
 

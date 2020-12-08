@@ -31,7 +31,7 @@ ifeq "$(MAIN)" ""
 MAIN = iS3D.e
 endif
 
-SRC = Main.cpp iS3D.cpp Arsenal.cpp emissionfunction.cpp MomentumSpectra.cpp SpacetimeDistribution.cpp ParticleSampler.cpp Polarization.cpp Table.cpp readindata.cpp ParameterReader.cpp deltafReader.cpp gaussThermal.cpp viscous_correction.cpp
+SRC = Main.cpp iS3D.cpp Arsenal.cpp emissionfunction.cpp MomentumSpectra.cpp SpacetimeDistribution.cpp ParticleSampler.cpp Polarization.cpp Table.cpp readindata.cpp ParameterReader.cpp DeltafData.cpp gaussThermal.cpp viscous_correction.cpp
 
 INC = iS3D.h Arsenal.h emissionfunction.h Table.h readindata.h Stopwatch.h ParameterReader.h deltafReader.h gaussThermal.h viscous_correction.h Macros.h
 
