@@ -1,6 +1,6 @@
 
-#ifndef arsenal_h
-#define arsenal_h
+#ifndef ASRENAL_H
+#define ASRENAL_H
 
 #include "stdlib.h"
 #include <vector>
