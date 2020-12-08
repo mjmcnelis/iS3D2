@@ -13,7 +13,7 @@
 #include "Table.h"
 #include "readindata.h"
 #include "emissionfunction.h"
-#include "arsenal.h"
+#include "Arsenal.h"
 #include "ParameterReader.h"
 #include "deltafReader.h"
 

@@ -20,7 +20,7 @@
 #include "readindata.h"
 #include "emissionfunction.h"
 #include "Stopwatch.h"
-#include "arsenal.h"
+#include "Arsenal.h"
 #include "ParameterReader.h"
 #include "deltafReader.h"
 #include <gsl/gsl_sf_bessel.h> //for modified bessel functions

@@ -269,7 +269,7 @@ public:
 
   // resonance decay routine:
   //:::::::::::::::::::::::::::::::::::::::::::::::::
-
+/*
   // main function
   void do_resonance_decays(particle_info * particle_data);
 
@@ -288,6 +288,7 @@ public:
 
   // MT fit function
   MT_fit_parameters estimate_MT_function_of_dNdypTdpTdphi(int iy, int iphip, double mass_parent);
+  */
 
   // other
   int particle_chosen_index(int particle_index);

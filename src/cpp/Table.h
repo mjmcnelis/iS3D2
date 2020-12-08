@@ -36,8 +36,6 @@ class Table
     void printTable(ostream& os=std::cout);
     double getFirst(long);
     double getLast(long);
-    double interp(long, long, double, int mode=6);
-    double invert(long, long, double, int mode=6);
 };
 
 #endif

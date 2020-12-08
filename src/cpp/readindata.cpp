@@ -10,7 +10,7 @@
 #include "iS3D.h"
 #include "Macros.h"
 #include "readindata.h"
-#include "arsenal.h"
+#include "Arsenal.h"
 #include "ParameterReader.h"
 #include "Table.h"
 #include "gaussThermal.h"

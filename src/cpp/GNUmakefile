@@ -20,29 +20,30 @@ CC = g++
 CFLAGS= -std=c++11 -O3 -lgsl -lgslcblas -lm # for g++
 #CFLAGS= -std=c++11 -qopenmp -O3 -lgsl -lgslcblas # for icpc
 
-RM		=	rm -f
-O               =       .o
-LDFLAGS         =       $(CFLAGS)
-SYSTEMFILES     =       $(SRCGNU)
+RM = rm -f
+O = .o
+LDFLAGS = $(CFLAGS)
+SYSTEMFILES = $(SRCGNU)
 
 # --------------- Files involved ------------------
 
 ifeq "$(MAIN)" ""
-MAIN		=	iS3D.e
+MAIN = iS3D.e
 endif
 
-SRC   =	RuniS3D.cpp iS3D.cpp arsenal.cpp emissionfunction.cpp emissionfunction_smooth_kernels.cpp emissionfunction_sampling_kernels.cpp emissionfunction_polzn_kernels.cpp Table.cpp readindata.cpp ParameterReader.cpp deltafReader.cpp gaussThermal.cpp viscous_correction.cpp emissionfunction_resonance_decays.cpp
-INC   = iS3D.h arsenal.h emissionfunction.h Table.h readindata.h Stopwatch.h ParameterReader.h deltafReader.h gaussThermal.h viscous_correction.h
+SRC = Main.cpp iS3D.cpp Arsenal.cpp emissionfunction.cpp MomentumSpectra.cpp SpacetimeDistribution.cpp ParticleSampler.cpp Polarization.cpp Table.cpp readindata.cpp ParameterReader.cpp deltafReader.cpp gaussThermal.cpp viscous_correction.cpp
+
+INC = iS3D.h Arsenal.h emissionfunction.h Table.h readindata.h Stopwatch.h ParameterReader.h deltafReader.h gaussThermal.h viscous_correction.h Macros.h
 
 
 # -------------------------------------------------
 
-OBJDIR		=	obj
-SRCFILES 	= 	$(SRC) $(INC) GNUmakefile
-OBJECTS		=	$(addprefix $(OBJDIR)/, $(addsuffix $O, \
-			$(basename $(SRC))))
-TARGET		=	$(MAIN)
-INSTPATH	=	../
+OBJDIR = obj
+SRCFILES = $(SRC) $(INC) GNUmakefile
+OBJECTS = $(addprefix $(OBJDIR)/, $(addsuffix $O, \
+		  $(basename $(SRC))))
+TARGET = $(MAIN)
+INSTPATH = ../
 
 # --------------- Pattern rules -------------------
 
@@ -54,40 +55,40 @@ $(OBJDIR)/%.o: %.cpp
 
 # -------------------------------------------------
 
-.PHONY:		all mkobjdir clean distclean install
+.PHONY:	all mkobjdir clean distclean install
 
-all:		mkobjdir $(TARGET)
+all:	mkobjdir $(TARGET)
 
 help:
-		@grep '^##' GNUmakefile
+	@grep '^##' GNUmakefile
 
 mkobjdir:
-		-@mkdir -p $(OBJDIR)
+	-@mkdir -p $(OBJDIR)
 
 $(TARGET):	$(OBJECTS)
 		$(CC) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
-#		strip $(TARGET)
 
 clean:
-		-rm $(OBJECTS)
+	-rm $(OBJECTS)
 
 distclean:
-		-rm $(TARGET)
-		-rm -r obj
+	-rm $(TARGET)
+	-rm -r obj
 
 install:	$(TARGET)
 		cp $(TARGET) $(INSTPATH)
 
 # --------------- Dependencies -------------------
-./RuniS3D.cpp: iS3D.h
-./iS3D.cpp: iS3D.h Table.h readindata.h emissionfunction.h arsenal.h ParameterReader.h
-./arsenal.cpp: arsenal.h
-./emissionfunction.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h
-./emissionfunction_smooth_kernels.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h
-./emissionfunction_polzn_kernels.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h
-./emissionfunction_sampling_kernels.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h viscous_correction.h
-./Table.cpp: Table.h arsenal.h
-./readindata.cpp: iS3D.h readindata.h arsenal.h Table.h ParameterReader.h
-./ParameterReader.cpp: arsenal.h ParameterReader.h
-./gaussThermal.cpp: gaussThermal.h
-./emissionfunction_resonance_decays.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h ParameterReader.h
+# ./Main.cpp: iS3D.h
+# ./iS3D.cpp: iS3D.h Table.h readindata.h emissionfunction.h arsenal.h ParameterReader.h
+# ./arsenal.cpp: arsenal.h
+# ./emissionfunction.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h
+# ./emissionfunction_momentum_spectra.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h
+# ./emissionfunction_spacetime_distribution.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h
+# ./emissionfunction_polarization.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h
+# ./emissionfunction_particle_sampler.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h Table.h gaussThermal.h viscous_correction.h
+# ./Table.cpp: Table.h arsenal.h
+# ./readindata.cpp: iS3D.h readindata.h arsenal.h Table.h ParameterReader.h
+# ./ParameterReader.cpp: arsenal.h ParameterReader.h
+# ./gaussThermal.cpp: gaussThermal.h
+##./emissionfunction_resonance_decays.cpp: iS3D.h readindata.h emissionfunction.h Stopwatch.h arsenal.h ParameterReader.h
