@@ -73,9 +73,10 @@ void IS3D::read_fo_surf_from_memory(
   pixn = pixn_in;
   piyy = piyy_in;
   piyn = piyn_in;
-  pinn = pinn_in;
+  pinn = pinn_in;       // pinn is extraneous
   Pi = Pi_in;
 }
+
 
 void IS3D::run_particlization(int fo_from_file)
 {
@@ -101,6 +102,7 @@ void IS3D::run_particlization(int fo_from_file)
 #endif
 
 
+
   printf("\n\nReading in freezeout surface ");
   long FO_length = 0;
   FO_data_reader freeze_out_data(paraRdr, "input");     // freezeout reader class
@@ -115,19 +117,20 @@ void IS3D::run_particlization(int fo_from_file)
   }
 
 
-  FO_surf* surf_ptr = new FO_surf[FO_length];           // freezeout surface pointer
+  FO_surf *surf_ptr = new FO_surf[FO_length];           // freezeout surface pointer
 
   if(fo_from_file == 1)
   {
-    printf("file ");
     freeze_out_data.read_freezeout_surface(surf_ptr);   // load freezeout surface info from file
   }
   else
   {
-    printf("from memory (please check that you've already undone hbarc = 1 units in hydro module)...\n\n");
+    printf("from memory (please check that you've already undone hbarc = 1 units and tau factors in hydro module)...\n\n");
 
     for(long is = 0; is < FO_length; is++)              // load freezeout surface info from memory
     {
+      // Please check that the units match!
+
       // contravariant spacetime position x^\mu
       surf_ptr[is].tau = tau[is];                       // \tau [fm]
       surf_ptr[is].x = x[is];                           // x [fm]
@@ -165,6 +168,9 @@ void IS3D::run_particlization(int fo_from_file)
     }
   }
 
+  printf("Number of freezeout cells = %ld\n\n", FO_length);
+
+
 
   printf("\n\nReading in particle info from ");
   particle_info *particle_data = new particle_info[Maxparticle];  // particle info pointer
@@ -172,12 +178,14 @@ void IS3D::run_particlization(int fo_from_file)
   int Nparticle = pdg.read_resonances(particle_data);             // get number of resonances in PDG file
 
 
-  printf("Reading in chosen particles table... (please check that PDG/chosen_particles.dat has 1 blank line eof)\n\n");
+  printf("\n\nReading in chosen particles table from PDG/chosen_particles.dat... (please check if 1 blank line eof)\n\n");
   Table chosen_particles("PDG/chosen_particles.dat");             // chosen particles table
 
+  printf("Number of chosen particles = %ld\n", chosen_particles.getNumberOfRows());
 
-  // df coefficient data
-  Deltaf_Data * df_data = new Deltaf_Data(paraRdr);               // df data pointer
+
+
+  Deltaf_Data *df_data = new Deltaf_Data(paraRdr);               // df data pointer
   df_data->load_df_coefficient_data();                            // read in df coefficient tables
 
   if(!include_baryon)
@@ -190,34 +198,40 @@ void IS3D::run_particlization(int fo_from_file)
   df_data->test_df_coefficients(-0.1);                            // test df coefficients for bulk pressure Pi = -Peq/10
 
 
-  printf("Number of freezeout cells = %ld\n", FO_length);
-  printf("Number of chosen particles = %d\n", chosen_particles.getNumberOfRows());
+
+  printf("\n\n\nReading in momentum and spacetime rapidity tables from tables/...\n\n");
+  Table pT_tab("tables/momentum/pT_table.dat");                   // pT table
+  Table phi_tab("tables/momentum/phi_table.dat");                 // phi table
+  Table y_tab("tables/momentum/y_table.dat");                     // y table (for 3+1d smooth CFF)
+  Table eta_tab("tables/spacetime_rapidity/eta_table.dat");       // eta table (for 2+1d smooth CFF)
 
 
-  // read in momentum and spacetime rapidity tables
-  Table pT_tab("tables/momentum/pT_table.dat");             // pT table
-  Table phi_tab("tables/momentum/phi_table.dat");           // phi table
-  Table y_tab("tables/momentum/y_table.dat");               // y table (for 3+1d smooth CFF)
-  Table eta_tab("tables/spacetime_rapidity/eta_table.dat"); // eta table (for 2+1d smooth CFF)
 
+  // emission function class (continuous or sampled particle spectra)
   EmissionFunctionArray efa(paraRdr, &chosen_particles, &pT_tab, &phi_tab, &y_tab, &eta_tab, particle_data, Nparticle, surf_ptr, FO_length, df_data);
 
-  std::vector<Sampled_Particle> particle_event_list_in;
-  efa.calculate_spectra(particle_event_list_in);
+  std::vector<Sampled_Particle> particle_event_list_in;   // sampled particle list (JETSCAPE requires one particle list per CPU thread)
+  efa.calculate_spectra(particle_event_list_in);          // compute particle spectra from Cooper-Frye formula
 
-  //copy final particle list to memory to pass to JETSCAPE module
+
+
   int operation = paraRdr->getVal("operation");
-  if (operation == 2)
+
+  if(operation == 2)
   {
-    cout << "Copying final particle list to memory" << endl;
-    cout << "Particle list contains " << particle_event_list_in.size() << " particles" << endl;
-    final_particles_ = particle_event_list_in;
+    printf("\nCopying final particle list to memory (JETSCAPE)\n");
+    printf("Particle list contains %ld particles\n", particle_event_list_in.size());
+
+    final_particles_ = particle_event_list_in;    // store sampled particle list in memory to pass to afterburner module in JETSCAPE
   }
 
+
+  delete paraRdr;                                                 // delete pointers
   delete [] surf_ptr;
-  delete paraRdr;
+  delete [] particle_data;
   delete df_data;
-
-  printf("\nFinished calculating particle spectra\n");
-
 }
+
+
+
+

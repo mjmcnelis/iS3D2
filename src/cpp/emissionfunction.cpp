@@ -11,9 +11,11 @@
 #include <complex>
 #include <array>
 #include <sys/time.h>
-//#ifdef _OMP
-//#include <omp.h>
-//#endif
+
+#ifdef OPENMP
+  #include <omp.h>
+#endif
+
 #include "iS3D.h"
 #include "readindata.h"
 #include "emissionfunction.h"
@@ -49,30 +51,7 @@ void Lab_Momentum::boost_pLRF_to_lab_frame(Milne_Basis basis_vectors, double ut,
     py    = E_LRF * uy  +  px_LRF * Xy  +  py_LRF * Yy;
     pn    = E_LRF * un  +  px_LRF * Xn  +  pz_LRF * Zn;
 }
-//------------------------------------------
 
-/*
-double equilibrium_particle_density(double mass, double degeneracy, double sign, double T, double chem)
-{
-  // for cross-checking particle density calculation
-
-  double neq = 0.0;
-  double sign_factor = -sign;
-  int jmax = 20;
-  double two_pi2_hbarC3 = 2.0 * pow(M_PI,2) * pow(hbarC,3);
-  double mbar = mass / T;
-
-  for(int j = 1; j < jmax; j++)            // sum truncated expansion of Bose-Fermi distribution
-  {
-    double k = (double)j;
-    sign_factor *= (-sign);
-    neq += sign_factor * exp(k * chem) * gsl_sf_bessel_Kn(2, k * mbar) / k;
-  }
-  neq *= degeneracy * mass * mass * T / two_pi2_hbarC3;
-
-  return neq;
-}
-*/
 
 double compute_detA(Shear_Stress pimunu, double shear_mod, double bulk_mod)
 {
@@ -159,31 +138,78 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
   Table* phi_tab_in, Table* y_tab_in, Table* eta_tab_in, particle_info* particles_in,
   int Nparticles_in, FO_surf* surf_ptr_in, long FO_length_in, Deltaf_Data * df_data_in)
   {
-    paraRdr = paraRdr_in;
-
-    // tables
+    // momentum and spacetime rapdity tables
     pT_tab = pT_tab_in;
-    pT_tab_length = pT_tab->getNumberOfRows();
     phi_tab = phi_tab_in;
-    phi_tab_length = phi_tab->getNumberOfRows();
     y_tab = y_tab_in;
-    y_tab_length = y_tab->getNumberOfRows();
     eta_tab = eta_tab_in;
+
+    pT_tab_length = pT_tab->getNumberOfRows();
+    phi_tab_length = phi_tab->getNumberOfRows();
+    y_tab_length = y_tab->getNumberOfRows();
     eta_tab_length = eta_tab->getNumberOfRows();
+
 
     // omp parameters
     CORES = 1;
-    //CORES = omp_get_max_threads();
 
-    cout << "Number of cores: " << CORES << endl;
+  #ifdef OPENMP
+    CORES = omp_get_max_threads();
+  #endif
+
 
     // control parameters
+    paraRdr = paraRdr_in;
     OPERATION = paraRdr->getVal("operation");
     MODE = paraRdr->getVal("mode");
-    DF_MODE = paraRdr->getVal("df_mode");
+
+
     DIMENSION = paraRdr->getVal("dimension");
-    if(DIMENSION == 2) y_tab_length = 1;
-    else if(DIMENSION == 3) eta_tab_length = 1;
+
+    if(DIMENSION == 2)
+    {
+      y_tab_length = 1;
+    }
+    else if(DIMENSION == 3)
+    {
+      eta_tab_length = 1;
+    }
+    else
+    {
+      printf("EmissionFunctionArray error: need to set dimension = (2,3)\n");
+      exit(-1);
+    }
+
+
+    DF_MODE = paraRdr->getVal("df_mode");
+
+    if(DF_MODE == 1)
+    {
+      df_correction = "Grad 14-moment approximation";
+    }
+    else if(DF_MODE == 2)
+    {
+      df_correction = "RTA Chapman-Enskog expansion";
+    }
+    else if(DF_MODE == 3)
+    {
+      df_correction = "PTM modified equilibrium distribution";
+    }
+    else if(DF_MODE == 4)
+    {
+      df_correction = "PTB modified equilibrium distribution";
+    }
+    else if(DF_MODE == 5)
+    {
+      df_correction = "PTM modified anisotropic distribution";
+    }
+    else
+    {
+      printf("EmissionFunctionArray error: need to set df_mode = (1,2,3,4,5)\n");
+      exit(-1);
+    }
+
+
     INCLUDE_BARYON = paraRdr->getVal("include_baryon");
     INCLUDE_BULK_DELTAF = paraRdr->getVal("include_bulk_deltaf");
     INCLUDE_SHEAR_DELTAF = paraRdr->getVal("include_shear_deltaf");
@@ -206,7 +232,11 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
     MIN_NUM_HADRONS = paraRdr->getVal("min_num_hadrons");
     MAX_NUM_SAMPLES = paraRdr->getVal("max_num_samples");
     SAMPLER_SEED = paraRdr->getVal("sampler_seed");
-    if(OPERATION == 2) printf("Sampler seed set to %d \n", SAMPLER_SEED);
+
+    if(OPERATION == 2)
+    {
+      printf("Sampler seed set to %ld \n", SAMPLER_SEED);
+    }
 
 
     // parameters for sampler test
@@ -324,6 +354,11 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
       }
     } // if (MODE == 5)
 
+
+
+    // how much of this do we still need?
+
+
     for (int n = 0; n < Nparticles; n++) chosen_particles_01_table[n] = 0;
 
     //only grab chosen particles from the table
@@ -387,6 +422,10 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
   }
 
 
+
+  // try combining common spectra file functions to reduce clutter...
+  // and also move to a separate source file
+
   void EmissionFunctionArray::write_dN_pTdpTdphidy_toFile(int *MCID)
   {
     printf("Writing thermal spectra to file...\n");
@@ -422,6 +461,7 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
       spectra.close();
     }
   }
+
 
 
   void EmissionFunctionArray::write_dN_dphidy_toFile(int *MCID)
@@ -659,6 +699,11 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
       spectraFile.close();
     } // ievent
   }
+
+
+
+
+  // can I combine the sampled functions?
 
   void EmissionFunctionArray::write_sampled_dN_dy_to_file_test(int * MCID)
   {
@@ -953,116 +998,111 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
   }
 
 
+
+
   //*********************************************************************************************
   void EmissionFunctionArray::calculate_spectra(std::vector<Sampled_Particle> &particle_event_list_in)
   {
-    cout << "calculate_spectra() has started:\n\n";
+    printf("\n\nRunning particlization with %s\n\n", df_correction.c_str());
+
+#ifdef OPENMP
+    double t1 = omp_get_wtime();
+#else
     Stopwatch sw;
     sw.tic();
+#endif
 
-    //double t1 = omp_get_wtime();
+    printf("Allocating memory for individual arrays to hold particle and freezeout surface info\n");
 
-    //struct timeval t1, t2;
-    //gettimeofday(&t1, NULL);
 
-    //fill arrays with all particle info and freezeout info to pass to function which will perform the integral
+    // particle info of chosen particles
+    double *Mass = (double*)calloc(number_of_chosen_particles, sizeof(double));
+    double *Sign = (double*)calloc(number_of_chosen_particles, sizeof(double));
+    double *Degeneracy = (double*)calloc(number_of_chosen_particles, sizeof(double));
+    double *Baryon = (double*)calloc(number_of_chosen_particles, sizeof(double));
+    int *MCID = (int*)calloc(number_of_chosen_particles, sizeof(int));
 
-    printf("Loading particle and freezeout surface arrays...\n");
+    double *Equilibrium_Density = (double*)calloc(number_of_chosen_particles, sizeof(double));
+    double *Bulk_Density = (double*)calloc(number_of_chosen_particles, sizeof(double));
+    double *Diffusion_Density = (double*)calloc(number_of_chosen_particles, sizeof(double));
 
-    //particle info
-    particle_info *particle;
-    double *Mass, *Sign, *Degeneracy, *Baryon;
-    int *MCID;
-    double *Equilibrium_Density, *Bulk_Density, *Diffusion_Density;
-
-    Mass = (double*)calloc(number_of_chosen_particles, sizeof(double));
-    Sign = (double*)calloc(number_of_chosen_particles, sizeof(double));
-    Degeneracy = (double*)calloc(number_of_chosen_particles, sizeof(double));
-    Baryon = (double*)calloc(number_of_chosen_particles, sizeof(double));
-
-    MCID = (int*)calloc(number_of_chosen_particles, sizeof(int));
-
-    Equilibrium_Density = (double*)calloc(number_of_chosen_particles, sizeof(double));
-    Bulk_Density = (double*)calloc(number_of_chosen_particles, sizeof(double));
-    Diffusion_Density = (double*)calloc(number_of_chosen_particles, sizeof(double));
-
-    for (int ipart = 0; ipart < number_of_chosen_particles; ipart++)
+    for(int ipart = 0; ipart < number_of_chosen_particles; ipart++)
     {
-      int particle_idx = chosen_particles_sampling_table[ipart];
+      int chosen_index = chosen_particles_sampling_table[ipart];  // chosen particle's PDG index
 
-      particle = &particles[particle_idx];
+      Mass[ipart] = particles[chosen_index].mass;                 // mass of chosen particles
+      Sign[ipart] = particles[chosen_index].sign;                 // quantum statistics sign
+      Degeneracy[ipart] = particles[chosen_index].gspin;          // spin degeneracy factor
+      Baryon[ipart] = particles[chosen_index].baryon;             // baryon number
+      MCID[ipart] = particles[chosen_index].mc_id;                // Monte-Carlo ID
 
-      Mass[ipart] = particle->mass;
-      Sign[ipart] = particle->sign;
-      Degeneracy[ipart] = particle->gspin;
-      Baryon[ipart] = particle->baryon;
-      MCID[ipart] = particle->mc_id;
-      Equilibrium_Density[ipart] = particle->equilibrium_density;
-      Bulk_Density[ipart] = particle->bulk_density;
-      Diffusion_Density[ipart] = particle->diff_density;
+      Equilibrium_Density[ipart] = particles[chosen_index].equilibrium_density; // neq
+      Bulk_Density[ipart] = particles[chosen_index].bulk_density;               // dn_bulk (omitted Pi * u.d\sigma)
+      Diffusion_Density[ipart] = particles[chosen_index].diff_density;          // dn_diff (omitted V.d\sigma)
     }
 
-    // gauss laguerre roots and weights
-    Gauss_Laguerre * gla = new Gauss_Laguerre;
-    gla->load_roots_and_weights("tables/gla_roots_weights_64_points.txt");
 
-    // gauss legendre roots and weights
+    // particle info of entire PDG table (remember to skip photons in calculation)
+    double *Mass_PDG = (double*)calloc(Nparticles, sizeof(double));
+    double *Sign_PDG = (double*)calloc(Nparticles, sizeof(double));
+    double *Degeneracy_PDG = (double*)calloc(Nparticles, sizeof(double));
+    double *Baryon_PDG = (double*)calloc(Nparticles, sizeof(double));
+
+    for(int ipart = 0; ipart < Nparticles; ipart++)
+    {
+      Mass_PDG[ipart] = particles[ipart].mass;
+      Sign_PDG[ipart] = particles[ipart].sign;
+      Degeneracy_PDG[ipart] = particles[ipart].gspin;
+      Baryon_PDG[ipart] = particles[ipart].baryon;
+    }
+
+
+    Gauss_Laguerre * gla = new Gauss_Laguerre;  // load gauss laguerre/legendre roots and weights
     Gauss_Legendre * legendre = new Gauss_Legendre;
-    legendre->load_roots_and_weights("tables/gauss_legendre_48pts.dat");
+    gla->load_roots_and_weights("tables/gauss/gla_roots_weights.txt");
+    legendre->load_roots_and_weights("tables/gauss/gauss_legendre.dat");
 
-    // averaged thermodynamic quantities
+
     Plasma * QGP = new Plasma;
-    QGP->load_thermodynamic_averages();
+    QGP->load_thermodynamic_averages();         // load averaged thermodynamic variables
 
-    // freezeout info
-    FO_surf *surf = &surf_ptr[0];
 
-    // freezeout surface info exclusive for VH
-    double *E, *T, *P;
-    if (MODE == 0 || MODE == 1 || MODE == 4 || MODE == 5 || MODE == 6 || MODE == 7)
-    {
-      E = (double*)calloc(FO_length, sizeof(double));
-      P = (double*)calloc(FO_length, sizeof(double));
-    }
+    // freezeout surface info
+    double *tau = (double*)calloc(FO_length, sizeof(double));
+    double *x = (double*)calloc(FO_length, sizeof(double));
+    double *y = (double*)calloc(FO_length, sizeof(double));
+    double *eta = (double*)calloc(FO_length, sizeof(double));
 
-    T = (double*)calloc(FO_length, sizeof(double));
+    double *dat = (double*)calloc(FO_length, sizeof(double));
+    double *dax = (double*)calloc(FO_length, sizeof(double));
+    double *day = (double*)calloc(FO_length, sizeof(double));
+    double *dan = (double*)calloc(FO_length, sizeof(double));
 
-    // freezeout surface info common for VH / VAH
-    double *tau, *x, *y, *eta;
-    double *ux, *uy, *un;
-    double *dat, *dax, *day, *dan;
-    double *pixx, *pixy, *pixn, *piyy, *piyn, *bulkPi;
-    double *muB, *nB, *Vx, *Vy, *Vn;
+    double *ux = (double*)calloc(FO_length, sizeof(double));
+    double *uy = (double*)calloc(FO_length, sizeof(double));
+    double *un = (double*)calloc(FO_length, sizeof(double));
 
-    tau = (double*)calloc(FO_length, sizeof(double));
-    x = (double*)calloc(FO_length, sizeof(double));
-    y = (double*)calloc(FO_length, sizeof(double));
-    eta = (double*)calloc(FO_length, sizeof(double));
+    double *E = (double*)calloc(FO_length, sizeof(double));
+    double *T = (double*)calloc(FO_length, sizeof(double));
+    double *P = (double*)calloc(FO_length, sizeof(double));
 
-    ux = (double*)calloc(FO_length, sizeof(double));
-    uy = (double*)calloc(FO_length, sizeof(double));
-    un = (double*)calloc(FO_length, sizeof(double));
+    double *pixx = (double*)calloc(FO_length, sizeof(double));
+    double *pixy = (double*)calloc(FO_length, sizeof(double));
+    double *pixn = (double*)calloc(FO_length, sizeof(double));
+    double *piyy = (double*)calloc(FO_length, sizeof(double));
+    double *piyn = (double*)calloc(FO_length, sizeof(double));
 
-    dat = (double*)calloc(FO_length, sizeof(double));
-    dax = (double*)calloc(FO_length, sizeof(double));
-    day = (double*)calloc(FO_length, sizeof(double));
-    dan = (double*)calloc(FO_length, sizeof(double));
+    double *bulkPi = (double*)calloc(FO_length, sizeof(double));
 
-    if(INCLUDE_SHEAR_DELTAF)
-    {
-      pixx = (double*)calloc(FO_length, sizeof(double));
-      pixy = (double*)calloc(FO_length, sizeof(double));
-      pixn = (double*)calloc(FO_length, sizeof(double));
-      piyy = (double*)calloc(FO_length, sizeof(double));
-      piyn = (double*)calloc(FO_length, sizeof(double));
-    }
 
-    if(INCLUDE_BULK_DELTAF)
-    {
-      bulkPi = (double*)calloc(FO_length, sizeof(double));
-    }
+    // baryon chemical potential effects
+    double *muB;                      // muB
+    double *nB;                       // nB
+    double *Vx;                       // V^x
+    double *Vy;                       // V^y
+    double *Vn;                       // V^\eta
 
-    if(INCLUDE_BARYON && INCLUDE_BARYONDIFF_DELTAF)
+    if(INCLUDE_BARYON)
     {
       muB = (double*)calloc(FO_length, sizeof(double));
       nB = (double*)calloc(FO_length, sizeof(double));
@@ -1071,9 +1111,16 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
       Vn = (double*)calloc(FO_length, sizeof(double));
     }
 
-    //thermal vorticity tensor for polarization studies
-    double *wtx, *wty, *wtn, *wxy, *wxn, *wyn;
-    if (MODE == 5)
+
+    // thermal vorticity tensor for polarization studies
+    double *wtx;
+    double *wty;
+    double *wtn;
+    double *wxy;
+    double *wxn;
+    double *wyn;
+
+    if(MODE == 5)
     {
       wtx = (double*)calloc(FO_length, sizeof(double));
       wty = (double*)calloc(FO_length, sizeof(double));
@@ -1083,46 +1130,10 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
       wyn = (double*)calloc(FO_length, sizeof(double));
     }
 
-    // freezeout surface info exclusive for VAH_PL
-    double *PL, *Wx, *Wy;
-    double *Lambda, *aL;
-    double *c0, *c1, *c2, *c3, *c4; //delta-f coeffs for vah
 
-    if(MODE == 2)
+    for(long icell = 0; icell < FO_length; icell++)
     {
-      PL = (double*)calloc(FO_length, sizeof(double));
-
-      //Wt = (double*)calloc(FO_length, sizeof(double));
-      Wx = (double*)calloc(FO_length, sizeof(double));
-      Wy = (double*)calloc(FO_length, sizeof(double));
-      //Wn = (double*)calloc(FO_length, sizeof(double));
-
-      Lambda = (double*)calloc(FO_length, sizeof(double));
-      aL = (double*)calloc(FO_length, sizeof(double));
-
-      // 14-moment coefficients (VAH_PL)
-      if (DF_MODE == 4)
-      {
-        c0 = (double*)calloc(FO_length, sizeof(double));
-        c1 = (double*)calloc(FO_length, sizeof(double));
-        c2 = (double*)calloc(FO_length, sizeof(double));
-        c3 = (double*)calloc(FO_length, sizeof(double));
-        c4 = (double*)calloc(FO_length, sizeof(double));
-      }
-    }
-
-    for (long icell = 0; icell < FO_length; icell++)
-    {
-      //reading info from surface
-      surf = &surf_ptr[icell];
-
-      if (MODE == 0 || MODE == 1 || MODE == 4 || MODE == 5 || MODE == 6 || MODE == 7)
-      {
-        E[icell] = surf->E;
-        P[icell] = surf->P;
-      }
-
-      T[icell] = surf->T;
+      FO_surf *surf = &surf_ptr[icell];     // get local freezeout surface info
 
       tau[icell] = surf->tau;
       x[icell] = surf->x;
@@ -1138,21 +1149,19 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
       day[icell] = surf->day;
       dan[icell] = surf->dan;
 
-      if(INCLUDE_SHEAR_DELTAF)
-      {
-        pixx[icell] = surf->pixx;
-        pixy[icell] = surf->pixy;
-        pixn[icell] = surf->pixn;
-        piyy[icell] = surf->piyy;
-        piyn[icell] = surf->piyn;
-      }
+      E[icell] = surf->E;
+      T[icell] = surf->T;
+      P[icell] = surf->P;
 
-      if(INCLUDE_BULK_DELTAF)
-      {
-        bulkPi[icell] = surf->bulkPi;
-      }
+      pixx[icell] = surf->pixx;
+      pixy[icell] = surf->pixy;
+      pixn[icell] = surf->pixn;
+      piyy[icell] = surf->piyy;
+      piyn[icell] = surf->piyn;
 
-      if(INCLUDE_BARYON && INCLUDE_BARYONDIFF_DELTAF)
+      bulkPi[icell] = surf->bulkPi;
+
+      if(INCLUDE_BARYON)
       {
         muB[icell] = surf->muB;
         nB[icell] = surf->nB;
@@ -1161,7 +1170,7 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
         Vn[icell] = surf->Vn;
       }
 
-      if (MODE == 5)
+      if(MODE == 5)
       {
         wtx[icell] = surf->wtx;
         wty[icell] = surf->wty;
@@ -1170,244 +1179,205 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
         wxn[icell] = surf->wxn;
         wyn[icell] = surf->wyn;
       }
-      if(MODE == 2)
+    }
+
+
+    switch(OPERATION)
+    {
+      case 0:
       {
-        PL[icell] = surf->PL;
-        //Wt[icell] = surf->Wt;
-        Wx[icell] = surf->Wx;
-        Wy[icell] = surf->Wy;
-        //Wn[icell] = surf->Wn;
+        printf("\nComputing particle spacetime distributions...\n\n");
 
-        Lambda[icell] = surf->Lambda;
-        aL[icell] = surf->aL;
-
-        if (DF_MODE == 4)
+        switch(DF_MODE)
         {
-          c0[icell] = surf->c0;
-          c1[icell] = surf->c1;
-          c2[icell] = surf->c2;
-          c3[icell] = surf->c3;
-          c4[icell] = surf->c4;
+          case 1:
+          case 2:
+          {
+            calculate_dN_dX(MCID, Mass, Sign, Degeneracy, Baryon, T, P, E, tau, x, y, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data);
+            break;
+          }
+          case 3:
+          case 4:
+          {
+            calculate_dN_dX_feqmod(MCID, Mass, Sign, Degeneracy, Baryon, T, P, E, tau, x, y, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, gla, df_data);
+            break;
+          }
+          case 5:
+          {
+            printf("calculate_spectra error: no spacetime distribution routine for famod yet\n");
+            exit(-1);
+            break;
+          }
+          default:
+          {
+            printf("calculate_spectra error: need to set df_mode = (1, 2, 3, 4, 5)\n");
+            exit(-1);
+          }
         }
+        break;
+      }
+      case 1:
+      {
+        printf("\nComputing continuous momentum spectra...\n\n");
+
+        switch(DF_MODE)
+        {
+          case 1:
+          case 2:
+          {
+            calculate_dN_pTdpTdphidy(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data);
+            break;
+          }
+          case 3:
+          case 4:
+          {
+            calculate_dN_pTdpTdphidy_feqmod(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, gla, df_data);
+            break;
+          }
+          case 5:
+          {
+            calculate_dN_pTdpTdphidy_famod(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, gla, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
+            break;
+          }
+          default:
+          {
+            printf("calculate_spectra error: need to set df_mode = (1, 2, 3, 4, 5)\n");
+            exit(-1);
+          }
+        }
+        write_dN_pTdpTdphidy_toFile(MCID);   // write continuous particle momentum spectra to file
+        write_continuous_vn_toFile(MCID);
+        write_dN_twopipTdpTdy_toFile(MCID);
+        write_dN_dphidy_toFile(MCID);
+        write_dN_dy_toFile(MCID);
+
+        break;
+      }
+      case 2:
+      {
+        if(OVERSAMPLE)
+        {
+          // this does not take into account famod yield yet...
+          // estimate average particle yield
+          double Ntotal = calculate_total_yield(Equilibrium_Density, Bulk_Density, Diffusion_Density, T, P, E, tau, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data, gla);
+
+          Nevents = (long)min(ceil(MIN_NUM_HADRONS / Ntotal), MAX_NUM_SAMPLES);   // number of events to sample
+        }
+
+        printf("\nSampling %ld particlization event(s)...\n\n", Nevents);
+
+        particle_event_list.resize(Nevents);
+
+        switch(DF_MODE)
+        {
+          case 1:
+          case 2:
+          case 3:
+          case 4:
+          {
+            sample_dN_pTdpTdphidy(Mass, Sign, Degeneracy, Baryon, MCID, Equilibrium_Density, Bulk_Density, Diffusion_Density, T, P, E, tau, x, y, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data, gla, legendre);
+            break;
+          }
+          case 5:
+          {
+            printf("calculate_spectra error: no sampling routine for famod yet\n"); // should be a new version for aniso hydro
+            exit(-1);
+            break;
+          }
+          default:
+          {
+            printf("calculate_spectra error: need to set df_mode = (1, 2, 3, 4, 5)\n");
+            exit(-1);
+          }
+        }
+
+        if(TEST_SAMPLER)
+        {
+          write_sampled_dN_dy_to_file_test(MCID);         // write particle distributions to file
+          write_sampled_dN_deta_to_file_test(MCID);       // only for testing the particle sampler
+          write_sampled_dN_2pipTdpTdy_to_file_test(MCID);
+          write_sampled_dN_dphipdy_to_file_test(MCID);
+          write_sampled_vn_to_file_test(MCID);
+          write_sampled_dN_dX_to_file_test(MCID);
+        }
+        else
+        {
+          write_particle_list_OSC();                      // write OSCAR particle list to file (if not using JETSCAPE)
+        }
+
+        particle_event_list_in = particle_event_list[0];  // JETSCAPE assigns one emission event per CPU thread (set test_sampler = oversample = 0)
+
+        break;
+      }
+      default:
+      {
+        printf("calculate_spectra error: need to set operation = (0, 1, 2)\n");
+        exit(-1);
       }
     }
 
-    // compute the particle spectra
 
-    if (MODE == 0 || MODE == 1 || MODE == 4 || MODE == 5 || MODE == 6 || MODE == 7) // viscous hydro
+    if(MODE == 5)
     {
-      switch(DF_MODE)
-      {
-        case 1: // 14 moment
-        case 2: // Chapman Enskog
-        {
-          switch(OPERATION)
-          {
-            case 0: // smooth CFF spacetime distribution
-            {
-              calculate_dN_dX(MCID, Mass, Sign, Degeneracy, Baryon, T, P, E, tau, x, y, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data);
-              break;
-            }
-            case 1: // smooth CFF momentum distribution
-            {
-              calculate_dN_pTdpTdphidy(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data);
-              break;
-            }
-            case 2: // sample CFF
-            {
-              if(OVERSAMPLE)
-              {
-                // average particle yield
-                double Ntotal = calculate_total_yield(Equilibrium_Density, Bulk_Density, Diffusion_Density, T, P, E, tau, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data, gla);
-
-                // number of events to sample
-                Nevents = (long)min(ceil(MIN_NUM_HADRONS / Ntotal), MAX_NUM_SAMPLES);
-              }
-
-              printf("Sampling %d event(s)\n", Nevents);
-
-              particle_event_list.resize(Nevents);
-
-              if(DF_MODE == 1) printf("Sampling particles with Grad 14 moment df...\n");
-              if(DF_MODE == 2) printf("Sampling particles with Chapman Enskog df...\n");
-
-              sample_dN_pTdpTdphidy(Mass, Sign, Degeneracy, Baryon, MCID, Equilibrium_Density, Bulk_Density, Diffusion_Density, T, P, E, tau, x, y, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data, gla, legendre);
-
-              if(TEST_SAMPLER) // only for testing the sampler
-              {
-                write_sampled_dN_dy_to_file_test(MCID);
-                write_sampled_dN_deta_to_file_test(MCID);
-                write_sampled_dN_2pipTdpTdy_to_file_test(MCID);
-                write_sampled_dN_dphipdy_to_file_test(MCID);
-                write_sampled_vn_to_file_test(MCID);
-                write_sampled_dN_dX_to_file_test(MCID);
-              }
-              else // do for actual runs
-              {
-                write_particle_list_OSC();
-              }
-
-              particle_event_list_in = particle_event_list[0];  // only one event per core
-              break;
-            }
-            default:
-            {
-              cout << "Set operation to 1 or 2" << endl;
-              exit(-1);
-            }
-          }
-          break;
-        }
-        case 3: // modified (Mike)
-        case 4: // modified (Jonah)
-        {
-          switch(OPERATION)
-          {
-            case 0: // smooth CFF spacetime distribution
-            {
-              calculate_dN_dX_feqmod(MCID, Mass, Sign, Degeneracy, Baryon, T, P, E, tau, x, y, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, gla, df_data);
-              break;
-            }
-            case 1: // smooth CF
-            {
-              calculate_dN_ptdptdphidy_feqmod(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, gla, df_data);
-              break;
-            }
-            case 2: // sampler
-            {
-              if(OVERSAMPLE)
-              {
-                double Ntotal = calculate_total_yield(Equilibrium_Density, Bulk_Density, Diffusion_Density, T, P, E, tau, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data, gla);
-
-                Nevents = (long)min(ceil(MIN_NUM_HADRONS / Ntotal), MAX_NUM_SAMPLES);
-              }
-
-              printf("Sampling %d event(s)\n", Nevents);
-
-              particle_event_list.resize(Nevents);
-
-              if(DF_MODE == 3) printf("Sampling particles with Mike's modified distribution...\n");
-              if(DF_MODE == 4) printf("Sampling particles with Jonah's modified distribution...\n");
-
-              sample_dN_pTdpTdphidy(Mass, Sign, Degeneracy, Baryon, MCID, Equilibrium_Density, Bulk_Density, Diffusion_Density, T, P, E, tau, x, y, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data, gla, legendre);
-
-
-              if(TEST_SAMPLER) // only for testing the sampler
-              {
-                write_sampled_dN_dy_to_file_test(MCID);
-                write_sampled_dN_deta_to_file_test(MCID);
-                write_sampled_dN_2pipTdpTdy_to_file_test(MCID);
-                write_sampled_dN_dphipdy_to_file_test(MCID);
-                write_sampled_vn_to_file_test(MCID);
-                write_sampled_dN_dX_to_file_test(MCID);
-              }
-              else // do for actual runs
-              {
-                write_particle_list_OSC();
-              }
-
-              particle_event_list_in = particle_event_list[0];
-
-              break;
-            }
-            default:
-            {
-              cout << "Set operation to 1 or 2" << endl;
-              exit(-1);
-            }
-          } //switch(OPERATION)
-          break;
-        } //case 3
-        default:
-        {
-          cout << "Please specify df_mode = (1,2,3,4) in parameters.dat..." << endl;
-          exit(-1);
-        }
-      } //switch(DF_MODE)
-    } // if (MODE == 1 || MODE == 4 || MODE == 5 || MODE == 6)
-    else if (MODE == 2)
-    {
-      switch(OPERATION)
-      {
-        case 1: // smooth CF
-        {
-          // calculate_dN_pTdpTdphidy_VAH_PL(Mass, Sign, Degeneracy,
-          //     tau, eta, ux, uy, un,
-          //     dat, dax, day, dan, T,
-          //     pitt, pitx, pity, pitn, pixx, pixy, pixn, piyy, piyn, pinn, bulkPi,
-          //     Wx, Wy, Lambda, aL, c0, c1, c2, c3, c4);
-
-          break;
-        }
-        case 2: // sampler
-        {
-          // sample_dN_pTdpTdphidy_VAH_PL(Mass, Sign, Degeneracy,
-          //       tau, eta, ux, uy, un,
-          //       dat, dax, day, dan, T,
-          //       pitt, pitx, pity, pitn, pixx, pixy, pixn, piyy, piyn, pinn, bulkPi,
-          //       Wx, Wy, Lambda, aL, c0, c1, c2, c3, c4);
-          break;
-        }
-        default:
-        {
-          cout << "Please specify df_mode = (1,2,3) in parameters.dat..." << endl;
-          exit(-1);
-        }
-      } //switch(OPERATION)
-    } //else if(MODE == 2)
-
-    else if (MODE == 5) calculate_spin_polzn(Mass, Sign, Degeneracy, tau, eta, ux, uy, un, dat, dax, day, dan, wtx, wty, wtn, wxy, wxn, wyn, QGP);
-
-    //write the results to file
-    if(OPERATION == 1)
-    {
-      write_dN_pTdpTdphidy_toFile(MCID);
-      write_continuous_vn_toFile(MCID);
-      write_dN_twopipTdpTdy_toFile(MCID);
-      write_dN_dphidy_toFile(MCID);
-      write_dN_dy_toFile(MCID);
+      printf("\nComputing spin polarization...\n");
+      calculate_spin_polzn(Mass, Sign, Degeneracy, tau, eta, ux, uy, un, dat, dax, day, dan, wtx, wty, wtn, wxy, wxn, wyn, QGP);
+      write_polzn_vector_toFile();
     }
 
-    if(MODE == 5) write_polzn_vector_toFile();
 
-    cout << "Freeing freezeout surface memory..." << endl;
-    // free memory
+    printf("\nFreeing memory...\n");
+
     free(Mass);
     free(Sign);
+    free(Degeneracy);
     free(Baryon);
+    free(MCID);
 
-    if (MODE == 0 || MODE == 1 || MODE == 4 || MODE == 5 || MODE == 6 || MODE == 7)
-    {
-      free(E);
-      free(P);
-    }
+    free(Equilibrium_Density);
+    free(Bulk_Density);
+    free(Diffusion_Density);
 
-    free(T);
+    free(Mass_PDG);
+    free(Sign_PDG);
+    free(Degeneracy_PDG);
+    free(Baryon_PDG);
 
     free(tau);
+    free(x);
+    free(y);
     free(eta);
-
-    free(ux);
-    free(uy);
-    free(un);
 
     free(dat);
     free(dax);
     free(day);
     free(dan);
 
-    if(INCLUDE_SHEAR_DELTAF)
+    free(ux);
+    free(uy);
+    free(un);
+
+    free(E);
+    free(T);
+    free(P);
+
+    free(pixx);
+    free(pixy);
+    free(pixn);
+    free(piyy);
+    free(piyn);
+
+    free(bulkPi);
+
+    if(INCLUDE_BARYON)
     {
-      free(pixx);
-      free(pixy);
-      free(pixn);
-      free(piyy);
-      free(piyn);
+      free(muB);
+      free(nB);
+      free(Vx);
+      free(Vy);
+      free(Vn);
     }
 
-    if(INCLUDE_BULK_DELTAF) free(bulkPi);
-
-    if (MODE == 5)
+    if(MODE == 5)
     {
       free(wtx);
       free(wty);
@@ -1417,37 +1387,13 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
       free(wyn);
     }
 
-    if(INCLUDE_BARYON && INCLUDE_BARYONDIFF_DELTAF)
-    {
-      free(muB);
-      free(nB);
-      free(Vx);
-      free(Vy);
-      free(Vn);
-    }
-
-    if(MODE == 2)
-    {
-      free(PL);
-      free(Wx);
-      free(Wy);
-      free(Lambda);
-      free(aL);
-      if (DF_MODE == 4)
-      {
-        free(c0);
-        free(c1);
-        free(c2);
-        free(c3);
-        free(c4);
-      }
-    }
+  #ifdef OPENMP
+    double t2 = omp_get_wtime();
+    cout << "\nSpectra calculation took " << (t2 - t1) << " seconds\n" << endl;
+  #else
     sw.toc();
-
-    //double t2 = omp_get_wtime();
-    cout << "\ncalculate_spectra() took " << sw.takeTime() << " seconds." << endl;
-    //cout << "\ncalculate_spectra() took " << t2.tv_sec - t1.tv_sec << " seconds." << endl;
-    //cout << "\ncalculate_spectra() took " << (t2 - t1) << " seconds." << endl;
+    cout << "\nSpectra calculation took " << sw.takeTime() << " seconds\n" << endl;
+  #endif
   }
 
 

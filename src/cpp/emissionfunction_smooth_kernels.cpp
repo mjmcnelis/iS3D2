@@ -18,6 +18,7 @@
 #include "emissionfunction.h"
 #include "Stopwatch.h"
 #include "arsenal.h"
+#include "Macros.h"
 #include "ParameterReader.h"
 #include "deltafReader.h"
 #include <gsl/gsl_sf_bessel.h> //for modified bessel functions
@@ -33,8 +34,6 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
   double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo,
   double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Deltaf_Data *df_data)
   {
-    printf("computing thermal spectra from vhydro with df...\n\n");
-
     double prefactor = pow(2.0 * M_PI * hbarC, -3);   // prefactor of CFF
 
     long FO_chunk = FO_length / CORES;
@@ -410,17 +409,14 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
 
     } // particle species (ipart)
 
-
-
     // free memory
     free(dN_pTdpTdphidy_all);
   }
 
 
-  void EmissionFunctionArray::calculate_dN_ptdptdphidy_feqmod(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Gauss_Laguerre * laguerre, Deltaf_Data * df_data)
-  {
-    printf("computing thermal spectra from vhydro with feqmod...\n\n");
 
+  void EmissionFunctionArray::calculate_dN_pTdpTdphidy_feqmod(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Gauss_Laguerre * laguerre, Deltaf_Data * df_data)
+  {
     double prefactor = pow(2.0 * M_PI * hbarC, -3);
 
     long FO_chunk = FO_length / CORES;
@@ -1045,6 +1041,610 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy(double *Mass, double *Sign,
     //free memory
     free(dN_pTdpTdphidy_all);
   }
+
+
+
+
+  void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Gauss_Laguerre * laguerre, double *Mass_PDG, double *Sign_PDG, double *Degeneracy_PDG, double *Baryon_PDG)
+  {
+    double prefactor = pow(2.0 * M_PI * hbarC, -3);
+
+    long FO_chunk = FO_length / CORES;
+    long remainder = FO_length  -  CORES * FO_chunk;
+
+    printf("Number of cores = %ld\n", CORES);
+    printf("Chunk size = %ld\n", FO_chunk);
+    printf("Remainder cells = %ld\n", remainder);
+
+    if(remainder != 0)
+    {
+      FO_chunk++;                           // round up by one
+    }
+
+    double detB_min = DETA_MIN;             // default value for minimum detB = detC . detA
+    long breakdown = 0;                     // number of times fa or famod breaks down
+    double tau_breakdown = 0;               // tau until feqmod stops breaking down
+
+    long pl_negative = 0;                   // number of times pl < 0 (use continue or set fa = feq?)
+    double tau_pl = 0;                      // tau until pl > 0
+
+    double cosphi_values[phi_tab_length];   // phi arrays
+    double sinphi_values[phi_tab_length];
+    double phi_weights[phi_tab_length];
+
+    double pT_values[pT_tab_length];        // pT array
+
+    double y_values[y_tab_length];          // rapidity and spacetime rapidity arrays
+    double eta_values[eta_tab_length];
+    double eta_weights[eta_tab_length];
+
+    for(long iphip = 0; iphip < phi_tab_length; iphip++)
+    {
+      double phi = phi_tab->get(1, iphip + 1);
+      cosphi_values[iphip] = cos(phi);
+      sinphi_values[iphip] = sin(phi);
+      phi_weights[iphip] = phi_tab->get(2, iphip + 1);
+    }
+
+    for(long ipT = 0; ipT < pT_tab_length; ipT++)
+    {
+      pT_values[ipT] = pT_tab->get(1, ipT + 1);
+    }
+
+    if(DIMENSION == 2)
+    {
+      y_values[0] = 0;
+
+      for(long ieta = 0; ieta < eta_tab_length; ieta++)
+      {
+        eta_values[ieta] = eta_tab->get(1, ieta + 1);
+        eta_weights[ieta] = eta_tab->get(2, ieta + 1);
+      }
+    }
+    else if(DIMENSION == 3)
+    {
+      eta_values[0] = 0;
+      eta_weights[0] = 1;
+
+      for(long iy = 0; iy < y_tab_length; iy++)
+      {
+        y_values[iy] = y_tab->get(1, iy + 1);
+      }
+    }
+
+
+    // ********
+
+    // gauss laguerre roots
+    const int pbar_pts = laguerre->points;
+
+    double * pbar_root1 = laguerre->root[1];          // a = 1, 2  gla needed
+    double * pbar_root2 = laguerre->root[2];
+
+    double * pbar_weight1 = laguerre->weight[1];      // I might need more than this...
+    double * pbar_weight2 = laguerre->weight[2];
+
+
+
+
+    // allocate a huge array to hold momentum spectra for each chunk
+    long npart = (long)number_of_chosen_particles;
+    double *dN_pTdpTdphidy_all = (double*)calloc(CORES * npart * pT_tab_length * phi_tab_length * y_tab_length, sizeof(double));
+
+
+    // subdivide bite size chunks of freezeout surface across cores
+    #pragma omp parallel for
+    for(long n = 0; n < CORES; n++)
+    {
+      double **B_copy = (double**)calloc(3, sizeof(double*));   // momentum transformation matrix
+      double **B_inv  = (double**)calloc(3, sizeof(double*));
+
+      for(int i = 0; i < 3; i++)
+      {
+        B_copy[i] = (double*)calloc(3, sizeof(double));
+        B_inv[i]  = (double*)calloc(3, sizeof(double));
+      }
+
+      long endFO = FO_chunk;
+
+      for(long icell = 0; icell < endFO; icell++)  // cell index inside each chunk
+      {
+        if((icell == endFO - 1) && (remainder != 0) && (n > remainder - 1))
+        {
+          continue;
+        }
+
+        long icell_glb = n  +  icell * CORES;   // global freezeout cell index
+
+
+        // freezeout cell info
+        double tau = tau_fo[icell_glb];         // longitudinal proper time
+        double tau2 = tau * tau;
+
+        if(DIMENSION == 3)
+        {
+          eta_values[0] = eta_fo[icell_glb];     // spacetime rapidity of freezeout cell
+        }
+
+        double dat = dat_fo[icell_glb];         // covariant normal surface vector
+        double dax = dax_fo[icell_glb];
+        double day = day_fo[icell_glb];
+        double dan = dan_fo[icell_glb];
+
+        double ux = ux_fo[icell_glb];           // contravariant fluid velocity
+        double uy = uy_fo[icell_glb];           // enforce normalization u.u = 1
+        double un = un_fo[icell_glb];
+        double ut = sqrt(1.  +  ux * ux  +  uy * uy  +  tau2 * un * un);
+
+        if(ut * dat  +  ux * dax  +  uy * day  +  un * dan <= 0)
+        {
+          continue;                             // skip cells with u.dsigma < 0
+        }
+
+        double ut2 = ut * ut;                   // useful expressions
+        double ux2 = ux * ux;
+        double uy2 = uy * uy;
+        double uperp = sqrt(ux * ux  +  uy * uy);
+        double utperp = sqrt(1.  +   ux * ux  +  uy * uy);
+
+        double T = T_fo[icell_glb];             // temperature [GeV]
+        double P = P_fo[icell_glb];             // equilibrium pressure [GeV/fm^3]
+        double E = E_fo[icell_glb];             // energy density (GeV/fm^3)
+
+        double pixx = pixx_fo[icell_glb];       // contravariant standard shear stress tensor pi^\munu
+        double pixy = pixy_fo[icell_glb];       // reconstruct remaining components to enforce
+        double pixn = pixn_fo[icell_glb];       // orthogonality and tracelessness pi.u = Tr(pi) = 0
+        double piyy = piyy_fo[icell_glb];
+        double piyn = piyn_fo[icell_glb];
+
+        double pinn = (pixx * (ux2 - ut2)  +  piyy * (uy2 - ut2)  +  2. * (pixy * ux * uy  +  tau2 * un * (pixn * ux  +  piyn * uy))) / (tau2 * utperp * utperp);
+        double pitn = (pixn * ux  +  piyn * uy  +  tau2 * pinn * un) / ut;
+        double pity = (pixy * ux  +  piyy * uy  +  tau2 * piyn * un) / ut;
+        double pitx = (pixx * ux  +  pixy * uy  +  tau2 * pixn * un) / ut;
+        double pitt = (pitx * ux  +  pity * uy  +  tau2 * pitn * un) / ut;
+
+        double bulkPi = bulkPi_fo[icell_glb];   // bulk pressure (GeV/fm^3)
+
+        double muB = 0;                         // baryon chemical potential (GeV)
+        double Vt = 0;                          // contravariant net baryon diffusion V^mu
+        double Vx = 0;                          // enforce orthogonality V.u = 0
+        double Vy = 0;
+        double Vn = 0;
+
+        if(INCLUDE_BARYON)
+        {
+          muB = muB_fo[icell_glb];
+
+          if(INCLUDE_BARYONDIFF_DELTAF)
+          {
+            Vx = Vx_fo[icell_glb];              // baryon diffusion not included in famod yet
+            Vy = Vy_fo[icell_glb];
+            Vn = Vn_fo[icell_glb];
+            Vt = (Vx * ux  +  Vy * uy  +  tau2 * Vn * un) / ut;
+          }
+        }
+
+        double alphaB = muB / T;                // muB / T
+
+
+        // milne basis vector components
+        Milne_Basis basis_vectors(ut, ux, uy, un, uperp, utperp, tau);
+        basis_vectors.test_orthonormality(tau2);
+
+        double Xt = basis_vectors.Xt;
+        double Xx = basis_vectors.Xx;
+        double Xy = basis_vectors.Xy;
+        double Xn = basis_vectors.Xn;
+
+        double Yx = basis_vectors.Yx;
+        double Yy = basis_vectors.Yy;
+
+        double Zt = basis_vectors.Zt;
+        double Zn = basis_vectors.Zn;
+
+
+        // compute shear stress in LRF
+        Shear_Stress pimunu(pitt, pitx, pity, pitn, pixx, pixy, pixn, piyy, piyn, pinn);
+        pimunu.test_pimunu_orthogonality_and_tracelessness(ut, ux, uy, un, tau2);
+        pimunu.boost_pimunu_to_lrf(basis_vectors, tau2);
+
+        double pixx_LRF = pimunu.pixx_LRF;      // standard pi^munu LRF components
+        double pixy_LRF = pimunu.pixy_LRF;
+        double pixz_LRF = pimunu.pixz_LRF;
+        double piyy_LRF = pimunu.piyy_LRF;
+        double piyz_LRF = pimunu.piyz_LRF;
+        double pizz_LRF = pimunu.pizz_LRF;
+
+
+        Baryon_Diffusion Vmu(Vt, Vx, Vy, Vn);   // compute baryon diffusion in LRF
+        Vmu.test_Vmu_orthogonality(ut, ux, uy, un, tau2);
+        Vmu.boost_Vmu_to_lrf(basis_vectors, tau2);
+
+        double Vx_LRF = Vmu.Vx_LRF;             // standard V^\mu LRF components
+        double Vy_LRF = Vmu.Vy_LRF;
+        double Vz_LRF = Vmu.Vz_LRF;
+
+
+        // anisotropic hydrodynamic variables
+        double pl = P + bulkPi + pizz_LRF;      // longitudinal pressure
+        double pt = P + bulkPi - pizz_LRF/2.;   // transverse pressure
+
+        double piTxx_LRF = 0;                   // piperp^\munu LRF components
+        double piTxy_LRF = 0;
+        double piTyy_LRF = 0;
+        double WTzx_LRF = 0;                    // Wperpz^\mu LRF components
+        double WTzy_LRF = 0;
+
+        if(INCLUDE_SHEAR_DELTAF)                // include residual shear corrections
+        {
+          piTxx_LRF = (pixx_LRF - piyy_LRF) / 2.;
+          piTxy_LRF = pixy_LRF;
+          piTyy_LRF = -(piTxx_LRF);
+
+          WTzx_LRF = pixz_LRF;
+          WTzy_LRF = piyz_LRF;
+        }
+
+
+        #pragma omp critical
+        if(pl < 0)
+        {
+          pl_negative++;          // isn't there a better pragma to use?
+          tau_pl = tau;
+        }
+
+
+        double Lambda = T;                      // effective temperature
+        double aT = 1;                          // transverse momentum scale
+        double aL = 1;                          // longitudinal momentum scale
+        double upsilonB = alphaB;               // effective chemical potential
+
+
+        // **** reconstruct anisotropic variables ***
+
+        // do this once I've got the setup right
+
+
+        // compute aniso CE coefficients (after reconstruct aniso variables)
+
+        double shear_coeff = 0;    // 1 / (2.betapi_perp)
+        double diff_coeff = 0;     // 1 / betaW_perp
+
+        // perhaps I can use ~ 1/ 2.betapi as a substitute?
+
+
+        // leading order deformation matrix Aij (diagonal)
+        double Axx = aT;
+        double Ayy = aT;
+        double Azz = aL;
+
+        double detA = Axx * Ayy * Azz;
+
+
+        // residual shear deformation matrix Cij (asymmetric)
+        double Cxx = 1  +  shear_coeff * piTxx_LRF;
+        double Cxy = shear_coeff * piTxy_LRF;
+        double Cxz = diff_coeff * WTzx_LRF * aT / (aT + aL);
+
+        double Cyx = Cxy;
+        double Cyy = 1  +  shear_coeff * piTyy_LRF;
+        double Cyz = diff_coeff * WTzy_LRF * aT / (aT + aL);
+
+        double Czx = diff_coeff * WTzx_LRF * aL / (aT + aL);
+        double Czy = diff_coeff * WTzy_LRF * aL / (aT + aL);
+        double Czz = 1;
+
+        double detC = Cxx * (Cyy * Czz  -  Cyz * Czy)  -  Cxy * (Cyx * Czz  -  Cyz * Czx)  +  Cxz * (Cyx * Czy  -  Cyy * Czx);
+
+
+        // total momentum transformation matrix Bij (symmetric)
+        double Bxx = Axx  +  aT * shear_coeff * piTxx_LRF;
+        double Bxy = aT * shear_coeff * piTxy_LRF;
+        double Bxz = diff_coeff * WTzx_LRF * aT * aL / (aT + aL);
+
+        double Byx = Bxy;
+        double Byy = Ayy  +  aT * shear_coeff * piTyy_LRF;
+        double Byz = diff_coeff * WTzy_LRF * aT * aL / (aT + aL);
+
+        double Bzx = Bxz;
+        double Bzy = Byz;
+        double Bzz = Azz;
+
+        double detB = detC * detA;
+
+
+        // set momentum transformation matrix
+        double B[] = {Bxx, Bxy, Bxz,
+                      Byx, Byy, Byz,
+                      Bzx, Bzy, Bzz};           // gsl matrix format
+
+        B_copy[0][0] = Bxx;  B_copy[0][1] = Bxy;  B_copy[0][2] = Bxz;
+        B_copy[1][0] = Byx;  B_copy[1][1] = Byy;  B_copy[1][2] = Byz;
+        B_copy[2][0] = Bzx;  B_copy[2][1] = Bzy;  B_copy[2][2] = Bzz;
+
+        int s;
+        gsl_matrix_view M = gsl_matrix_view_array(B, 3, 3);
+        gsl_matrix_view LU = gsl_matrix_view_array(B, 3, 3);
+
+        gsl_permutation *p = gsl_permutation_calloc(3);
+
+        gsl_linalg_LU_decomp(&LU.matrix, p, &s);
+
+        gsl_matrix *B_inverse = gsl_matrix_alloc(3,3);
+
+        gsl_linalg_LU_invert(&LU.matrix, p, B_inverse);
+
+        for(int i = 0; i < 3; i++)
+        {
+          for(int j = 0; j < 3; j++)
+          {
+            B_inv[i][j] = gsl_matrix_get(B_inverse, i, j);
+          }
+        }
+
+
+
+        // *** need to review this (check feqmod breakdown function)
+
+        bool fa_famod_breaks_down = false;      // replace with a function (or if/else statement)
+
+
+
+
+        #pragma omp critical
+        if(fa_famod_breaks_down)
+        {
+          breakdown++;
+          tau_breakdown = tau;
+        }
+
+        // uniformly rescale eta space by detA if modified momentum space elements are shrunk
+        // this rescales the dsigma components orthogonal to the eta direction (only works for 2+1d, y = 0)
+        // for integrating modified distribution with narrow (y-eta) distributions
+        double eta_scale = 1;
+
+
+        // I should rescale by the total deformation detB
+
+
+        // *** need to review this
+
+        if(detB > detB_min && DIMENSION == 2)
+        {
+          eta_scale = detB;     // how does this enter?   rescale by detB (rather than detC)
+        }
+
+
+
+        // *** need to review this (Zn = 1/detC)
+
+        double renorm = detB / detC;                // renormalization factor (for dimension = 2)
+
+        if(DIMENSION == 3)
+        {
+          renorm = 1. / detC;
+        }
+
+        if((std::isnan(renorm) || std::isinf(renorm)))
+        {
+        #ifdef FLAGS
+          printf("calculate_dN_pTdpTdphidy_famod flag: renormalization factor = %lf is negative\n", renorm);
+        #endif
+          continue;
+        }
+
+
+
+
+        // loop over hadrons
+        for(long ipart = 0; ipart < npart; ipart++)   // loop over chosen particles
+        {
+          long iS0D = pT_tab_length * ipart;
+
+          double mass = Mass[ipart];                  // mass [GeV]
+          double mass2 = mass * mass;
+          double sign = Sign[ipart];                  // quantum statistics sign
+          double degeneracy = Degeneracy[ipart];      // spin degeneracy
+          double baryon = Baryon[ipart];              // baryon number
+          double chem = baryon * alphaB;              // chemical potential term in feq
+          double chem_effect = baryon * upsilonB;     // effective chemical potential term in fa, famod
+
+          for(long ipT = 0; ipT < pT_tab_length; ipT++)   // loop over transverse momentum
+          {
+            long iS1D =  phi_tab_length * (ipT + iS0D);
+
+            double pT = pT_values[ipT];                   // pT [GeV]
+            double mT = sqrt(mass2  +  pT * pT);          // mT [GeV]
+            double mT_over_tau = mT / tau;
+
+            for(long iphip = 0; iphip < phi_tab_length; iphip++)  // loop over azimuthal angle
+            {
+              long iS2D = y_tab_length * (iphip + iS1D);
+
+              double px = pT * cosphi_values[iphip];      // p^x
+              double py = pT * sinphi_values[iphip];      // p^y
+
+              for(long iy = 0; iy < y_tab_length; iy++)   // loop over rapidity points
+              {
+                long iS3D = iy + iS2D;
+
+                double y = y_values[iy];                  // rapidity
+
+                double eta_integral = 0;                  // Cooper-Frye eta_s integral
+
+                for(long ieta = 0; ieta < eta_tab_length; ieta++) // loop over spacetime rapidity
+                {
+                  double eta = eta_values[ieta];          // spacetime rapidity
+                  double eta_weight = eta_weights[ieta];  // integration weight
+
+                  bool fa_famod_breaks_down_narrow = false;
+
+
+
+                  // *** review this
+
+                  if(DIMENSION == 3 && !fa_famod_breaks_down)
+                  {
+                    if(detB < 0.01 && fabs(y - eta) < detB)
+                    {
+                      fa_famod_breaks_down_narrow = true;
+                    }
+                  }
+
+
+
+                  double p_dsigma;  // p.d\sigma
+                  double f;         // fa, famod (or feq if fa, famod breaks down)
+
+                  // calculate distribution
+                  if(fa_famod_breaks_down || fa_famod_breaks_down_narrow) // set f = feq
+                  {
+                    double pt = mT * cosh(y - eta);          // p^\tau [GeV]
+                    double pn = mT_over_tau * sinh(y - eta); // p^\eta [GeV/fm]
+                    double tau2_pn = tau2 * pn;
+
+                    p_dsigma = pt * dat  +  px * dax  +  py * day  +  pn * dan;
+
+                    if(OUTFLOW && p_dsigma <= 0)
+                    {
+                      continue;     // enforce outflow Theta(p.d\sigma)
+                    }
+
+                    double u_p = pt * ut  -  px * ux  -  py * uy  -  tau2_pn * un;    // u.p = LRF energy
+
+                    f = 1. / (exp(u_p / T  -  chem)  +  sign);
+                  }
+                  else
+                  {
+                    double pt = mT * cosh(y - eta_scale * eta);          // p^\tau [GeV]
+                    double pn = mT_over_tau * sinh(y - eta_scale * eta); // p^\eta [GeV/fm]
+                    double tau2_pn = tau2 * pn;
+
+                    p_dsigma = pt * dat  +  px * dax  +  py * day  +  pn * dan;
+
+                    if(OUTFLOW && p_dsigma <= 0.0)
+                    {
+                      continue;
+                    }
+
+                    // LRF momentum components
+                    double px_LRF = -Xt * pt  +  Xx * px  +  Xy * py  +  Xn * tau2_pn;    // -X.p
+                    double py_LRF = Yx * px  +  Yy * py;                                  // -Y.p
+                    double pz_LRF = -Zt * pt  +  Zn * tau2_pn;                            // -Z.p
+
+                    double pLRF[3] = {px_LRF, py_LRF, pz_LRF};          // pLRF components
+                    double pLRF_prev[3];                                // track pLRF reproduction
+
+                    double pLRF_mod_prev[3];                            // pLRF_mod (previous iteration)
+                    double pLRF_mod[3];                                 // pLRF_mod (current)
+
+                    double dpLRF[3];                                    // pLRF reproduction error
+                    double dpLRF_mod[3];                                // pLRF_mod correction
+
+
+                    // solve matrix equation: B.pLRF_mod = p_LRF for pLRF_mod
+
+                    matrix_multiplication(B_inv, pLRF, pLRF_mod, 3, 3);               // invert p_mod = A^-1.p at least once
+
+                    double dp;                                                        // norm of p_LRF reproduction error
+                    double eps = 1.e-16;                                              // error tolerance
+
+                    for(int i = 0; i < 5; i++)                                        // iterate solution until converged
+                    {
+                      vector_copy(pLRF_mod, pLRF_mod_prev, 3);                        // copy result for iteration
+
+                      matrix_multiplication(B_copy, pLRF_mod_prev, pLRF_prev, 3, 3);  // compute pLRF error
+                      vector_subtraction(pLRF, pLRF_prev, dpLRF, 3);
+
+                      dp = sqrt(dpLRF[0] * dpLRF[0]  +  dpLRF[1] * dpLRF[1]  +  dpLRF[2] * dpLRF[2]);
+
+                      if(dp <= eps)
+                      {
+                        break;        // found solution
+                      }
+
+                      matrix_multiplication(B_inv, dpLRF, dpLRF_mod, 3, 3);           // compute correction to pLRF_mod
+                      vector_addition(pLRF_mod_prev, dpLRF_mod, pLRF_mod, 3);         // add correction to pLRF_mod
+                    }
+
+                    double px_LRF_mod = pLRF_mod[0];                                  // set pLRF_mod components
+                    double py_LRF_mod = pLRF_mod[1];
+                    double pz_LRF_mod = pLRF_mod[2];
+
+                    double E_mod = sqrt(mass2  +  px_LRF_mod * px_LRF_mod  +  py_LRF_mod * py_LRF_mod  +  pz_LRF_mod * pz_LRF_mod);
+
+
+                    // *** review this
+
+                    f = fabs(renorm) / (exp(E_mod / Lambda  -  chem_effect)  +  sign); // compute famod
+
+
+                  }
+
+                  eta_integral += (eta_weight * p_dsigma * f);      // add contribution to integral
+
+                } // eta points (ieta)
+
+                dN_pTdpTdphidy_all[n  +  CORES * iS3D] += (prefactor * degeneracy * eta_integral);
+
+              } // rapidity points (iy)
+
+            } // azimuthal angle points (iphip)
+
+          } // transverse momentum points (ipT)
+
+        } // particle species (ipart)
+
+        gsl_matrix_free(B_inverse);
+        gsl_permutation_free(p);
+
+      } // freezeout cells in the chunk (icell)
+
+      free_2D(B_copy, 3);
+      free_2D(B_inv, 3);
+
+    } // number of chunks / cores (n)
+
+
+    // now perform the reduction over cores
+    #pragma omp parallel for collapse(4)
+    for(long ipart = 0; ipart < npart; ipart++)
+    {
+      for(long ipT = 0; ipT < pT_tab_length; ipT++)
+      {
+        for(long iphip = 0; iphip < phi_tab_length; iphip++)
+        {
+          for(long iy = 0; iy < y_tab_length; iy++)
+          {
+            long iS3D = iy  +  y_tab_length * (iphip  +  phi_tab_length * (ipT  +  pT_tab_length * ipart));
+
+            double dN_pTdpTdphidy_tmp = 0.0; // reduction variable
+
+            #pragma omp simd reduction(+:dN_pTdpTdphidy_tmp)
+            for(long n = 0; n < CORES; n++)
+            {
+              dN_pTdpTdphidy_tmp += dN_pTdpTdphidy_all[n  +  CORES * iS3D];
+
+            } // sum over the cores
+
+            dN_pTdpTdphidy[iS3D] = dN_pTdpTdphidy_tmp;
+
+          } // rapidity points (iy)
+
+        } // azimuthal angle points (iphip)
+
+      } // transverse momentum points (ipT)
+
+    } // particle species (ipart)
+
+
+    printf("\nfeqmod breaks down for %ld / %ld cells until t = %.3f fm/c\n", breakdown, FO_length, tau_breakdown);
+    printf("pl went negative for %ld / %ld cells until t = %.3f fm/c\n\n", pl_negative, FO_length, tau_pl);
+
+    //free memory
+    free(dN_pTdpTdphidy_all);
+  }
+
 
 
 

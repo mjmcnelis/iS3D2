@@ -147,25 +147,20 @@ void FO_data_reader::read_freezeout_surface(FO_surf* surf_ptr)
   }
   else if (mode == 7)
   {
-    read_surface_hic_eventgen(surf_ptr);              // read 2+1d surface file from HIC-EventGen (hydro module is iEBE-VISHNU)
+    read_surface_hic_eventgen(surf_ptr);              // read 2+1d surface file from HIC-EventGen
   }
 }
 
 
 void FO_data_reader::read_surface_cpu_vh(FO_surf* surf_ptr)
 {
-  printf("from CPU VH ");
+  printf("from input/surface.dat and undoing hbarc = 1 units...");
   if(mode == 5)
   {
-    printf("with thermal vorticity ");                // only Derek's version of cpu vh outputs thermal vorticity wbar^\munu
+    printf(" (includes thermal vorticity)");          // only Derek's version of cpu vh outputs thermal vorticity wbar^\munu
   }
-  else
-  {
-    printf("(or CPU VAH) ");                          // note: cpu vah doesn't output thermal vorticity (yet)
-  }
-  printf("and undoing hbarc = 1 units...\n");
 
-  printf("\nGithub repository:\n\n");
+  printf("\n\nHydrodynamic code = CPU VH (or CPU VAH)\n\n");
   printf("\thttps://github.com/derekeverett/cpu-vh\t(CPU VH)\n");
   printf("\thttps://github.com/mjmcnelis/cpu_vah\t(CPU VAH)\n\n");
 
@@ -175,7 +170,7 @@ void FO_data_reader::read_surface_cpu_vh(FO_surf* surf_ptr)
   {
     if(mode == 5)
     {
-      printf("[t x y n ds_t ds_x ds_y ds_n u^x u^y u^n E T P pi^xx pi^xy pi^xn pi^yy pi^yn Pi muB nB V^x V^y V^n w^tx w^ty w^tn w^xy w^xn w^yn]\n\n");
+      printf("[t x y n ds_t ds_x ds_y ds_n u^x u^y u^n E T P pi^xx pi^xy pi^xn pi^yy pi^yn Pi muB nB V^x V^y V^n wbar^tx wbar^ty wbar^tn wbar^xy wbar^xn wbar^yn]\n\n");
     }
     else
     {
@@ -186,7 +181,7 @@ void FO_data_reader::read_surface_cpu_vh(FO_surf* surf_ptr)
   {
     if(mode == 5)
     {
-      printf("[t x y n ds_t ds_x ds_y ds_n u^x u^y u^n E T P pi^xx pi^xy pi^xn pi^yy pi^yn Pi w^tx w^ty w^tn w^xy w^xn w^yn]\n\n");
+      printf("[t x y n ds_t ds_x ds_y ds_n u^x u^y u^n E T P pi^xx pi^xy pi^xn pi^yy pi^yn Pi wbar^tx wbar^ty wbar^tn wbar^xy wbar^xn wbar^yn]\n\n");
     }
     else
     {
@@ -292,7 +287,7 @@ void FO_data_reader::read_surface_cpu_vh(FO_surf* surf_ptr)
     if(mode == 5)                                     // contravariant, dimensionless? undo hbarc = 1?
     {
       surfdat >> surf_ptr[i].wtx;                     // ask Derek for definition and units (any conversion?)
-      surfdat >> surf_ptr[i].wty;
+      surfdat >> surf_ptr[i].wty;                     // all upper indices?
       surfdat >> surf_ptr[i].wtn;
       surfdat >> surf_ptr[i].wxy;
       surfdat >> surf_ptr[i].wxn;
@@ -364,9 +359,9 @@ void FO_data_reader::read_surface_cpu_vh(FO_surf* surf_ptr)
 
 void FO_data_reader::read_surface_music(FO_surf* surf_ptr)
 {
-  printf("from MUSIC (public version) and undoing hbarc = 1 units and tau factors...\n");
+  printf("from input/surface.dat and undoing hbarc = 1 units and tau factors...\n");
 
-  printf("\nGithub repository:\n\n");
+  printf("\nHydrodynamic code = MUSIC (public version)\n\n");
   printf("\thttps://github.com/MUSIC-fluid/MUSIC\n\n");
 
   printf("Please check that input/surface.dat has the following format (and 1 blank line eof):\n\n\t");
@@ -424,7 +419,7 @@ void FO_data_reader::read_surface_music(FO_surf* surf_ptr)
 
 
     // contravariant fluid velocity u^\mu
-    surfdat >> surf_ptr[i].ut;                        // u^\tau [1]
+    surfdat >> dummy;                                 // u^\tau [1]
     surfdat >> surf_ptr[i].ux;                        // u^x [1]
     surfdat >> surf_ptr[i].uy;                        // u^y [1]
 
@@ -562,9 +557,9 @@ void FO_data_reader::read_surface_music(FO_surf* surf_ptr)
 
 void FO_data_reader::read_surface_hic_eventgen(FO_surf* surf_ptr)
 {
-  printf("from HIC-EventGen and undoing tau factors...\n");
+  printf("from input/surface.dat and undoing tau factors...\n");
 
-  printf("\nGithub repository:\n\n");
+  printf("\nHydrodynamic code = HIC-EventGen\n\n");
   printf("\thttps://github.com/Duke-QCD/hic-eventgen\n\n");
 
   if(dimension != 2)
@@ -579,7 +574,7 @@ void FO_data_reader::read_surface_hic_eventgen(FO_surf* surf_ptr)
   }
 
   printf("Please check that input/surface.dat has the following format (and 1 blank line eof):\n\n\t");
-  printf("[t x y n ds_t/t ds_x/t ds_y/t ds_n/t v^x v^y t.v^n pi^tt pi^tx pi^ty t.pi^tn pi^xx pi^xy t.pi^xn pi^yy t.pi^yn t2.pi^nn Pi T E P]\n\n");
+  printf("[t x y n ds_t/t ds_x/t ds_y/t ds_n/t v^x v^y t.v^n pi^tt pi^tx pi^ty t.pi^tn pi^xx pi^xy t.pi^xn pi^yy t.pi^yn t2.pi^nn Pi T E P muB]\n\n");
 
 
   ostringstream surfdat_stream;                       // prepare to read in surface.dat
@@ -626,19 +621,19 @@ void FO_data_reader::read_surface_hic_eventgen(FO_surf* surf_ptr)
 
 
     // puzzled about this...
-    // covariant fluid velocity (covariant?...)
-    double vx, vy, vn;
+    // covariant fluid velocity                       // ask Derek if covariant...
+    double vx;
+    double vy;
 
     surfdat >> vx;                                    // u^x / u^\tau [1]
     surfdat >> vy;                                    // u^y / u^\tau [1]
-    surfdat >> vn;                                    // \tau . u^\eta / u^\tau
+    surfdat >> dummy;                                 // \tau . u^\eta / u^\tau
 
     double ut =  1. / sqrt(fabs(1.  -  vx * vx  -  vy * vy));
 
-    surf_ptr[i].ux = ut * vx;                         // do i need a minus sign?
+    surf_ptr[i].ux = ut * vx;                         // if covariant, would need minus sign...
     surf_ptr[i].uy = ut * vy;
     surf_ptr[i].un = 0;
-
 
 
 
@@ -1075,7 +1070,7 @@ int PDG_Data::read_resonances_conventional(particle_info * particle, string pdg_
   }
   if(baryon != antibaryon) printf("Error: (anti)baryons not paired correctly\n");
 
-  printf("\nTotal number of resonances = %d\n\n\t", Nparticle);
+  printf("\nNumber of resonances = %d\n\n\t", Nparticle);
   printf("%d mesons\n\t", meson);
   printf("%d baryons\n\t", baryon);
   printf("%d antibaryons\n\n", antibaryon);
@@ -1194,7 +1189,7 @@ int PDG_Data::read_resonances_smash_box(particle_info * particle, string pdg_fil
   }
   if(baryon != antibaryon) printf("Error: (anti)baryons not paired correctly\n");
 
-  printf("\nTotal number of resonances = %d\n\n\t", Nparticle);
+  printf("\nNumber of resonances = %d\n\n\t", Nparticle);
   printf("%d mesons\n\t", meson);
   printf("%d baryons\n\t", baryon);
   printf("%d antibaryons\n\n", antibaryon);

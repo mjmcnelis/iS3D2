@@ -355,7 +355,7 @@ LRF_Momentum sample_momentum(default_random_engine& generator, long * acceptance
     double weq_max = 1.0; // default value if don't need to rescale weq = exp(p/T) / (exp(E/T) + sign)
 
     if(mbar < 0.8554 && sign == -1.0) weq_max = pion_thermal_weight_max(mbar, chem);
-      
+
     double r1, r2, r3, l1, l2, l3;
 
     while(true)

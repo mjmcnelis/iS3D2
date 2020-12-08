@@ -66,12 +66,15 @@ class EmissionFunctionArray
 {
 private:
   ParameterReader* paraRdr;
-    
+
   long CORES;   // number of cores for openmp
 
   int OPERATION; // calculate smooth spectra or sample distributions
   int MODE; //vh or vah , ...
+
   int DF_MODE;  // delta-f type
+  string df_correction;
+
   int DIMENSION; // hydro d+1 dimensions (2+1 or 3+1)
   int INCLUDE_BULK_DELTAF;
   int INCLUDE_SHEAR_DELTAF;
@@ -130,15 +133,15 @@ private:
   // for sampler test (2+1d)
   double **dN_dy_count;          // event-averaged momentum distributions
   double **dN_2pipTdpTdy_count;
-  double **dN_dphipdy_count;     
+  double **dN_dphipdy_count;
 
   double ***vn_real_count;      // event-averaged Vn's
-  double ***vn_imag_count;      
+  double ***vn_imag_count;
   const int K_MAX = 7;          // {v1, ..., v7}
-  double **pT_count;            // count in each pT bin 
+  double **pT_count;            // count in each pT bin
 
   double **dN_deta_count;       // event-averaged spacetime distribution
-  double **dN_taudtaudy_count; 
+  double **dN_taudtaudy_count;
   double **dN_twopirdrdy_count;
   double **dN_dphisdy_count;
 
@@ -181,7 +184,9 @@ public:
   void calculate_dN_pTdpTdphidy(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Deltaf_Data *df_data);
 
   // continuous spectra with feqmod
-  void calculate_dN_ptdptdphidy_feqmod(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Gauss_Laguerre * laguerre, Deltaf_Data * df_data);
+  void calculate_dN_pTdpTdphidy_feqmod(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Gauss_Laguerre * laguerre, Deltaf_Data * df_data);
+
+  void calculate_dN_pTdpTdphidy_famod(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Gauss_Laguerre * laguerre, double *Mass_PDG, double *Sign_PDG, double *Degeneracy_PDG, double *Baryon_PDG);
 
   void calculate_dN_dX(int *MCID, double *Mass, double *Sign, double *Degeneracy, double *Baryon,
   double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *x_fo, double *y_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo,

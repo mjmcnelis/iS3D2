@@ -64,7 +64,7 @@ Deltaf_Data::~Deltaf_Data()
 
 void Deltaf_Data::load_df_coefficient_data()
 {
-  printf("Reading in 14 moment and Chapman-Enskog coefficient tables...");
+  printf("\n\n\nReading in Grad 14-moment and RTA Chapman-Enskog coefficient tables from deltaf_coefficients/...\n");
 
   // now string join
   char c0[100] = "";
@@ -214,8 +214,6 @@ void Deltaf_Data::load_df_coefficient_data()
   fclose(betabulk_file);
   fclose(betaV_file);
   fclose(betapi_file);
-
-  printf("done\n");
 }
 
 
@@ -236,7 +234,7 @@ void Deltaf_Data::compute_jonah_coefficients(particle_info * particle_data, int 
 
   // gauss laguerre roots and weights
   Gauss_Laguerre gla;
-  gla.load_roots_and_weights("tables/gla_roots_weights_32_points.txt");
+  gla.load_roots_and_weights("tables/gauss/gla_roots_weights.txt");
 
   const int pbar_pts = gla.points;
 
@@ -299,7 +297,7 @@ void Deltaf_Data::compute_jonah_coefficients(particle_info * particle_data, int 
 
 void Deltaf_Data::construct_cubic_splines()
 {
-  printf("\nConstructing cubic splines for temperature-dependent (muB = 0) df coefficients...");
+  printf("\nConstructing cubic splines for df coefficients (muB = 0)...\n");
 
   // Allocate memory for cubic splines
   c0_spline = gsl_spline_alloc(gsl_interp_cspline, points_T);
@@ -332,7 +330,7 @@ deltaf_coefficients Deltaf_Data::cubic_spline(double T, double E, double P, doub
 
   switch(df_mode)
   {
-    case 1: // 14 moment
+    case 1: // Grad 14-moment approximation
     {
       // undo the temperature power scaling of coefficients
       double T4 = T * T * T * T;
@@ -346,8 +344,8 @@ deltaf_coefficients Deltaf_Data::cubic_spline(double T, double E, double P, doub
 
       break;
     }
-    case 2: // Chapman Enskog
-    case 3: // Modified (Mike)
+    case 2: // RTA Chapman-Enskog expansion
+    case 3: // PTM modified equilibrium distribution
     {
       // undo the temperature power scaling of coefficients
       double T4 = T * T * T * T;
@@ -360,7 +358,7 @@ deltaf_coefficients Deltaf_Data::cubic_spline(double T, double E, double P, doub
 
       break;
     }
-    case 4: // Modified (Jonah)
+    case 4: // PTB modified anisotropic distribution
     {
       // undo the temperature power scaling of betapi
       double T4 = T * T * T * T;
@@ -382,9 +380,13 @@ deltaf_coefficients Deltaf_Data::cubic_spline(double T, double E, double P, doub
 
       break;
     }
+    case 5: // PTM modified anisotropic distribution
+    {
+      break;  // famod doesn't use these coefficients
+    }
     default:
     {
-      printf("Error: choose df_mode = (1,2,3,4)\n");
+      printf("Error: choose df_mode = (1,2,3,4,5)\n");
       exit(-1);
     }
   }
@@ -519,22 +521,22 @@ void Deltaf_Data::test_df_coefficients(double bulkPi_over_P)
   double bulkPi = bulkPi_over_P * P;
 
 
-  printf("\nTesting df coefficients for Pi/Peq = %lf\n", bulkPi_over_P);     // * * ADD THIS * * //
-
-
   deltaf_coefficients df = evaluate_df_coefficients(T, muB, E, P, bulkPi);
 
   if(df_mode == 1)
   {
-    printf("\n(c0, c1, c2, c3, c4, shear14) = (%lf, %lf, %lf, %lf, %lf, %lf)\n\n", df.c0, df.c1, df.c2, df.c3, df.c4, df.shear14_coeff);
+    printf("\nTesting Grad 14-moment df coefficients for Pi/Peq = %.3f\n", bulkPi_over_P);
+    printf("\n(c0, c1, c2, c3, c4, shear14) = (%lf, %lf, %lf, %lf, %lf, %lf)\n", df.c0, df.c1, df.c2, df.c3, df.c4, df.shear14_coeff);
   }
   else if(df_mode == 2 || df_mode == 3)
   {
-    printf("\n(F, G, betabulk, betaV, betapi) = (%lf, %lf, %lf, %lf, %lf)\n\n", df.F, df.G, df.betabulk, df.betaV, df.betapi);
+    printf("\nTesting RTA Chapman-Enskog (or PTM) df coefficients for Pi/Peq = %.3f\n", bulkPi_over_P);
+    printf("\n(F, G, betabulk, betaV, betapi) = (%lf, %lf, %lf, %lf, %lf)\n", df.F, df.G, df.betabulk, df.betaV, df.betapi);
   }
   else if(df_mode == 4)
   {
-    printf("\n(lambda, z, dlambda, dz, betapi) = (%lf, %lf, %lf, %lf, %lf)\n\n", df.lambda, df.z, df.delta_lambda, df.delta_z, df.betapi);
+    printf("\nTesting PTB df coefficients for Pi/Peq = %.3f\n", bulkPi_over_P);
+    printf("\n(lambda, z, dlambda, dz, betapi) = (%lf, %lf, %lf, %lf, %lf)\n", df.lambda, df.z, df.delta_lambda, df.delta_z, df.betapi);
   }
 }
 
@@ -543,10 +545,6 @@ void Deltaf_Data::compute_particle_densities(particle_info * particle_data, int 
   // get the average temperature, energy density, pressure, etc.
   Plasma QGP;
   QGP.load_thermodynamic_averages();
-
-
-  printf("\nComputing particle densities...\n");    // * * ADD THIS * * //
-
 
   const double T = QGP.temperature;    // GeV
   const double E = QGP.energy_density; // GeV / fm^3
@@ -561,7 +559,7 @@ void Deltaf_Data::compute_particle_densities(particle_info * particle_data, int 
 
   // gauss laguerre roots and weights
   Gauss_Laguerre gla;
-  gla.load_roots_and_weights("tables/gla_roots_weights_64_points.txt");
+  gla.load_roots_and_weights("tables/gauss/gla_roots_weights.txt");
 
   const int pbar_pts = gla.points;
 
@@ -640,14 +638,17 @@ void Deltaf_Data::compute_particle_densities(particle_info * particle_data, int 
 
         break;
       }
-      case 4:
+      case 4: // PTB modified equilibrium distribution
       {
-        // bulk/diffusion densities not needed for jonah
+        break;  // bulk/diffusion density corrections not needed here
+      }
+      case 5: // PTM modified anisotropic distribution
+      {
         break;
       }
       default:
       {
-        cout << "Please choose df_mode = (1,2,3,4) in parameters.dat" << endl;
+        cout << "Please choose df_mode = (1,2,3,4,5) in parameters.dat" << endl;
         exit(-1);
       }
     } // df_mode

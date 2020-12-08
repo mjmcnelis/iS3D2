@@ -78,35 +78,16 @@ typedef struct
 
 typedef struct
 {
-  // I'll need to reorganize this...
+   double tau, x, y, eta;                 // contravariant spacetime position x^\mu
+   double dat, dax, day, dan;             // covariant surface normal vector d\sigma_\mu
+   double ux, uy, un;                     // contravariant fluid velocity u^\mu
+   double E, T, P;                        // energy density E, temperature T and equilibrium pressure P
+   double pixx, pixy, pixn, piyy, piyn;   // contravariant shear stress pi^\munu
+   double bulkPi;                         // bulk viscous pressure Pi
+   double muB, nB, Vx, Vy, Vn;            // net-baryon chemical potential muB, number density nB and contravariant diffusion current V^\mu
+   double wtx, wty, wtn, wxy, wxn, wyn;   // contravariant thermal vorticity wbar^\mu\nu
 
-
-   double tau, x, y, eta; //contravariant spacetime position
-   double dat, dax, day, dan; //COVARIANT surface normal vector
-   double ut, ux, uy, un; //contravariant flow velocity
-   double E, T, P; //energy density, Temperature and Isotropic Thermal Pressure
-   double pitt, pitx, pity, pitn, pixx, pixy, pixn, piyy, piyn, pinn; //contravariant components of shear stress tensor, or pi_perp^(\mu\nu) in case of VAH
-   double bulkPi; //bulk pressure, or residual bulk pressure in case of VAH
-   double muB, muS; //baryon chemical potential, strangeness chem. pot.
-   double nB, Vt, Vx, Vy, Vn; //baryon number density, contravariant baryon diffusion current, or in case of VAH transverse baryon diffusion vector
-
-   double wtx, wty, wtn, wxy, wxn, wyn; //the 6 components of the antisymmetric thermal vorticity with contravariant components w^\mu\nu
-
-
-
-
-   // get rid of this
-
-   //quantities exclusive to VAH
-   double PL; //longitudinal pressure
-   double PT; //transverse pressure
-   double Wt, Wx, Wy, Wn; //contraviariant longitudinal momentum diffusion current W^\mu = W_perpz^\mu
-   double Lambda; // effective Temperature
-   double aL, aT; // longitudinal and transverse momentum anisotropy parameters
-   double upsilonB; //effective baryon chemical potential
-   double nBL; //LRF longitudinal baryon diffusion
-   double c0,c1,c2,c3,c4; // for vah every FO has different delta-f coefficients
-
+   // double muE, muS; // electric and strange chemical potentials (might be needed in long run)
 } FO_surf;
 
 typedef struct
