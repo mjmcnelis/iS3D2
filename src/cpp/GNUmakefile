@@ -16,9 +16,9 @@ CC = g++
 #CC = icpc # icpc slower than g++ for sampler? (10/16/18)
 
 #choose flags corresponding to compiler
-#CFLAGS= -std=c++11 -O3 -fopenmp -lgsl -lgslcblas -lm # for g++
-CFLAGS= -std=c++11 -O3 -lgsl -lgslcblas -lm # for g++
-#CFLAGS= -std=c++11 -qopenmp -O3 -lgsl -lgslcblas # for icpc
+#CFLAGS = -std=c++11 -O3 -fopenmp -lgsl -lgslcblas -lm # for g++
+CFLAGS = -std=c++11 -O3 -lgsl -lgslcblas -lm # for g++
+#CFLAGS = -std=c++11 -qopenmp -O3 -lgsl -lgslcblas # for icpc
 
 RM = rm -f
 O = .o
@@ -31,9 +31,9 @@ ifeq "$(MAIN)" ""
 MAIN = iS3D.e
 endif
 
-SRC = Main.cpp iS3D.cpp Arsenal.cpp EmissionFunction.cpp MomentumSpectra.cpp SpacetimeDistribution.cpp ParticleSampler.cpp Polarization.cpp Table.cpp readindata.cpp ParameterReader.cpp DeltafData.cpp GaussThermal.cpp LocalRestFrame.cpp
+SRC = Main.cpp iS3D.cpp Arsenal.cpp EmissionFunction.cpp MomentumSpectra.cpp SpacetimeDistribution.cpp ParticleSampler.cpp Polarization.cpp Table.cpp readindata.cpp ParameterReader.cpp DeltafData.cpp GaussThermal.cpp LocalRestFrame.cpp Momentum.cpp BinSampledParticle.cpp
 
-INC = iS3D.h Arsenal.h Emissionfunction.h Table.h readindata.h ParameterReader.h deltafReader.h GaussThermal.h LocalRestFrame.h Macros.h Particle.h
+INC = iS3D.h Arsenal.h Emissionfunction.h Table.h readindata.h ParameterReader.h deltafReader.h GaussThermal.h LocalRestFrame.h Macros.h SampledParticle.h Momentum.h
 
 
 # -------------------------------------------------

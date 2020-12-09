@@ -8,10 +8,20 @@
 #include "iS3D.h"
 #include "ParameterReader.h"
 #include "DeltafData.h"
-#include "SampledParticle.h"
+#include "Particle.h"
 #include "LocalRestFrame.h"
 
 using namespace std;
+
+
+// typedef struct
+// {
+//   // fit parameters of y = exp(constant + slope * mT)
+//   // purpose is to extrapolate the distribution dN_dymTdmTdphi at large mT
+//   // for the resonance decay integration routines
+//   double constant;
+//   double slope;
+// } MT_fit_parameters;
 
 
 // thermal particle density (just for crosschecking)
@@ -20,7 +30,6 @@ using namespace std;
 double compute_detA(Shear_Stress pimunu, double betapi, double bulk_mod);
 
 bool is_linear_pion0_density_negative(double T, double neq_pion0, double J20_pion0, double bulkPi, double F, double betabulk);
-
 bool does_feqmod_breakdown(double mass_pion0, double T, double F, double bulkPi, double betabulk, double detA, double detA_min, double z, Gauss_Laguerre * laguerre, int df_mode, int fast, double Tavg, double F_avg, double betabulk_avg);
 
 
@@ -131,9 +140,8 @@ private:
 
 public:
 
-  // constructor
+  // constructor / destructor
   EmissionFunctionArray(ParameterReader* paraRdr_in, Table* chosen_particle, Table* pT_tab_in, Table* phi_tab_in, Table* y_tab_in, Table* eta_tab_in, particle_info* particles_in, int Nparticles, FO_surf* FOsurf_ptr_in, long FO_length_in, Deltaf_Data * df_data_in);
-
   ~EmissionFunctionArray();
 
   // main function
@@ -159,7 +167,12 @@ public:
 
    void calculate_dN_dX_feqmod(int *MCID, double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *x_fo, double *y_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Gauss_Laguerre * laguerre, Deltaf_Data * df_data);
 
-
+  // continuous spectra with fa + dft
+  void calculate_dN_pTdpTdphidy_VAH_PL(double *, double *, double *,
+    double *, double *, double *, double *, double *,
+    double *, double *, double *, double *, double *,
+    double *, double *, double *, double *, double *, double *, double *, double *, double *, double *, double *,
+    double *, double *, double *, double *, double *, double *, double *, double *, double *);
 
   //:::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -182,6 +195,13 @@ public:
   void sample_vn(int chosen_index, double px, double py);
   void sample_dN_dX(int chosen_index, double tau, double x, double y);
 
+
+
+  void sample_dN_pTdpTdphidy_VAH_PL(double *, double *, double *,
+  double *, double *, double *, double *, double *,
+  double *, double *, double *, double *, double *,
+  double *, double *, double *, double *, double *, double *, double *, double *, double *, double *, double *,
+  double *, double *, double *, double *, double *, double *, double *, double *, double *);
 
   //:::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -212,6 +232,39 @@ public:
   void write_sampled_dN_dphipdy_to_file_test(int * MCID);
   void write_sampled_vn_to_file_test(int * MCID);
   void write_sampled_dN_dX_to_file_test(int * MCID);
+
+
+
+  //:::::::::::::::::::::::::::::::::::::::::::::::::
+
+
+  // resonance decay routine:
+  //:::::::::::::::::::::::::::::::::::::::::::::::::
+/*
+  // main function
+  void do_resonance_decays(particle_info * particle_data);
+
+  // switch statement for n-body routines
+  void resonance_decay_channel(particle_info * particle_data, int parent_index, int parent_chosen_index, int channel, vector<int> decays_index_vector);
+
+  // n-body integration routines
+  void two_body_decay(particle_info * particle_data, double branch_ratio, int parent, int parent_chosen_index, int particle_1, int particle_2, double mass_1, double mass_2, double mass_parent);
+
+  void three_body_decay(particle_info * particle_data, double branch_ratio, int parent, int parent_chosen_index, int particle_1, int particle_2, int particle_3, double mass_parent);
+
+  // parent spectra linear interpolator
+  double dN_dYMTdMTdPhi_boost_invariant(int parent_chosen_index, double * MTValues, double PhipValues[], double MT, double Phip1, double Phip2, double Phip_min, double Phip_max, double MTmax, MT_fit_parameters ** MT_params);
+
+  double dN_dYMTdMTdPhi_non_boost_invariant(int parent_chosen_index, double * MTValues, double * PhipValues, int iYL, int iYR, double YL, double YR, double MT, double Phip1, double Phip2, double Y, double Phip_min, double Phip_max, double MTmax, MT_fit_parameters ** MT_params);
+
+  // MT fit function
+  MT_fit_parameters estimate_MT_function_of_dNdypTdpTdphi(int iy, int iphip, double mass_parent);
+  */
+
+  // other
+  int particle_chosen_index(int particle_index);
+
+  //:::::::::::::::::::::::::::::::::::::::::::::::::
 
 };
 

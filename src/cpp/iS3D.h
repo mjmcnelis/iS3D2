@@ -3,7 +3,7 @@
 
 #include <string>
 #include <vector>
-#include "Particle.h"
+#include "SampledParticle.h"
 #include <cmath>
 
 
