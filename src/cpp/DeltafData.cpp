@@ -552,6 +552,13 @@ void Deltaf_Data::compute_particle_densities(particle_info * particle_data, int 
   const double muB = QGP.baryon_chemical_potential;
   const double nB = QGP.net_baryon_density;
 
+
+  // uses average thermodynamic variables to compute
+  // the average particle densities for fast mode = 1
+
+  // but if reading surface from memory, can't use fast mode
+  // unless you made (does Derek use the T_switch parameter instead?)
+
   deltaf_coefficients df = evaluate_df_coefficients(T, muB, E, P, 0.0);
 
   double alphaB = muB / T;

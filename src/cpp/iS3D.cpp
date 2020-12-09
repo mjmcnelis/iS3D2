@@ -125,47 +125,98 @@ void IS3D::run_particlization(int fo_from_file)
   }
   else
   {
-    printf("from memory (please check that you've already undone hbarc = 1 units and tau factors in hydro module)...\n\n");
+    printf("from memory (please check that you've already undone hbarc = 1 units, tau factors from hydro module)...\n\n");
 
-    for(long is = 0; is < FO_length; is++)              // load freezeout surface info from memory
+    double T_avg = 0;                                   // average thermodynamic variables across freezeout surface
+    double E_avg = 0;
+    double P_avg = 0;
+    double muB_avg = 0;
+    double nB_avg = 0;
+    double max_volume = 0;
+
+    for(long icell = 0; icell < FO_length; icell++)     // load freezeout surface info from memory
     {
       // Please check that the units match!
 
       // contravariant spacetime position x^\mu
-      surf_ptr[is].tau = tau[is];                       // \tau [fm]
-      surf_ptr[is].x = x[is];                           // x [fm]
-      surf_ptr[is].y = y[is];                           // y [fm]
-      surf_ptr[is].eta = eta[is];                       // \eta_s [1]
+      surf_ptr[icell].tau = tau[icell];                 // \tau [fm]
+      surf_ptr[icell].x = x[icell];                     // x [fm]
+      surf_ptr[icell].y = y[icell];                     // y [fm]
+      surf_ptr[icell].eta = eta[icell];                 // \eta_s [1]
 
       // covariant surface normal vector
-      surf_ptr[is].dat = dsigma_tau[is];                // d\sigma_\tau [fm^-2]
-      surf_ptr[is].dax = dsigma_x[is];                  // d\sigma_x [fm^-2]
-      surf_ptr[is].day = dsigma_y[is];                  // d\sigma_y [fm^-2]
-      surf_ptr[is].dan = dsigma_eta[is];                // d\sigma_\eta [fm^-3]
+      surf_ptr[icell].dat = dsigma_tau[icell];          // d\sigma_\tau [fm^-2]
+      surf_ptr[icell].dax = dsigma_x[icell];            // d\sigma_x [fm^-2]
+      surf_ptr[icell].day = dsigma_y[icell];            // d\sigma_y [fm^-2]
+      surf_ptr[icell].dan = dsigma_eta[icell];          // d\sigma_\eta [fm^-3]
 
       // contravariant fluid velocity u^\mu
-      surf_ptr[is].ux = ux[is];                         // u^x [1]
-      surf_ptr[is].uy = uy[is];                         // u^y [1]
-      surf_ptr[is].un = un[is];                         // u^\eta [fm^-1]
+      surf_ptr[icell].ux = ux[icell];                   // u^x [1]
+      surf_ptr[icell].uy = uy[icell];                   // u^y [1]
+      surf_ptr[icell].un = un[icell];                   // u^\eta [fm^-1]
 
       // thermodynamic variables
-      surf_ptr[is].E = E[is];                           // energy density [GeV/fm^3]
-      surf_ptr[is].T = T[is];                           // temperature [GeV]
-      surf_ptr[is].P = P[is];                           // equilibrium pressure [GeV/fm^3]
+      surf_ptr[icell].E = E[icell];                     // energy density [GeV/fm^3]
+      surf_ptr[icell].T = T[icell];                     // temperature [GeV]
+      surf_ptr[icell].P = P[icell];                     // equilibrium pressure [GeV/fm^3]
 
       // contravariant shear stress pi^\mu\nu
-      surf_ptr[is].pixx = pixx[is];                     // pi^xx [GeV/fm^3]
-      surf_ptr[is].pixy = pixy[is];                     // pi^xy [GeV/fm^3]
-      surf_ptr[is].pixn = pixn[is];                     // pi^x\eta [GeV/fm^4]
-      surf_ptr[is].piyy = piyy[is];                     // pi^yy [GeV/fm^3]
-      surf_ptr[is].piyn = piyn[is];                     // pi^y\eta [GeV/fm^4]
+      surf_ptr[icell].pixx = pixx[icell];               // pi^xx [GeV/fm^3]
+      surf_ptr[icell].pixy = pixy[icell];               // pi^xy [GeV/fm^3]
+      surf_ptr[icell].pixn = pixn[icell];               // pi^x\eta [GeV/fm^4]
+      surf_ptr[icell].piyy = piyy[icell];               // pi^yy [GeV/fm^3]
+      surf_ptr[icell].piyn = piyn[icell];               // pi^y\eta [GeV/fm^4]
 
       // bulk viscous pressure
-      surf_ptr[is].bulkPi = Pi[is];                     // Pi [GeV/fm^3]
+      surf_ptr[icell].bulkPi = Pi[icell];               // Pi [GeV/fm^3]
 
-      // JETSCAPE does not consider (muB, nB, V^\mu) at the moment
+
+      // JETSCAPE doesn't consider (muB, nB, V^\mu) atm
+
+
+      // compute averaged thermodynamic quantities (for fast_mode = 1)
+      double E_s = E[icell];
+      double T_s = T[icell];
+      double P_s = P[icell];
+      double muB_s = 0;                                 // note: will need updating...
+      double nB_s = 0;
+
+      double tau_s = tau[icell];
+      double tau2 = tau_s * tau_s;
+
+      double ux_s = ux[icell];
+      double uy_s = uy[icell];
+      double un_s = un[icell];
+      double ut = sqrt(1.  +  ux_s * ux_s  +  uy_s * uy_s  +  tau2 * un_s * un_s);
+
+      double dat = dsigma_tau[icell];
+      double dax = dsigma_x[icell];
+      double day = dsigma_y[icell];
+      double dan = dsigma_eta[icell];
+
+      double uds = ut * dat  +  ux_s * dax  +  uy_s * day  +  un_s * dan;           // u^\mu . d\sigma_\mu
+      double ds_ds = dat * dat  -  dax * dax  -  day * day  -  dan * dan / tau2;    // d\sigma^\mu . d\sigma_\mu
+      double ds_max = fabs(uds)  +  sqrt(fabs(uds * uds  -  ds_ds));                // max volume element |ds|
+
+      E_avg += (E_s * ds_max);      // append values
+      T_avg += (T_s * ds_max);
+      P_avg += (P_s * ds_max);
+      muB_avg += (muB_s * ds_max);
+      nB_avg += (nB_s * ds_max);
+      max_volume += ds_max;
 
     }
+
+    T_avg /= max_volume;            // divide by total max volume
+    E_avg /= max_volume;
+    P_avg /= max_volume;
+    muB_avg /= max_volume;
+    nB_avg /= max_volume;
+
+    // write averaged thermodynamic variables to file
+    ofstream thermal_average("tables/thermodynamic/average_thermodynamic_quantities.dat", ios_base::out);
+    thermal_average << setprecision(15) << T_avg << "\n" << E_avg << "\n" << P_avg << "\n" << muB_avg << "\n" << nB_avg;
+    thermal_average.close();
   }
 
   printf("Number of freezeout cells = %ld\n\n", FO_length);

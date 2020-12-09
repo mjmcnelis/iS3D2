@@ -13,7 +13,6 @@
 #include "Arsenal.h"
 #include "ParameterReader.h"
 #include "Table.h"
-// #include "GaussThermal.h"
 
 using namespace std;
 
@@ -30,7 +29,12 @@ void Gauss_Laguerre::load_roots_and_weights(string file_name)
   file << file_name;
 
   FILE * gauss_file = fopen(file.str().c_str(), "r");
-  if(gauss_file == NULL) printf("Error: couldn't open gauss laguerre file\n");
+
+  if(gauss_file == NULL)
+  {
+    printf("load_roots_and_weights flag: couldn't open gauss laguerre file\n");
+  }
+
   // get the powers and number of gauss points
   fscanf(gauss_file, "%d\t%d", &alpha, &points);
   // allocate memory for the roots and weights
@@ -70,7 +74,10 @@ void Gauss_Legendre::load_roots_and_weights(string file_name)
 
   FILE * gauss_file = fopen(file.str().c_str(), "r");
 
-  if(gauss_file == NULL) printf("Error: couldn't open gauss legendre file\n");
+  if(gauss_file == NULL)
+  {
+    printf("load_roots_and_weights flag: couldn't open gauss legendre file\n");
+  }
 
   fscanf(gauss_file, "%d", &points);
 
@@ -99,10 +106,15 @@ void Plasma::load_thermodynamic_averages()
   // reads the averaged thermodynamic quantities of the freezeout surface
   // ** assumes the file has already been created in read_surf_switch
 
-  FILE * thermodynamic_file = fopen("average_thermodynamic_quantities.dat", "r");
+  FILE * thermodynamic_file = fopen("tables/thermodynamic/average_thermodynamic_quantities.dat", "r");
 
-  if(thermodynamic_file == NULL) printf("Error opening average thermodynamic file\n");
+  if(thermodynamic_file == NULL)
+  {
+    printf("load_thermodynamic_averages flag: couldn't open average thermodynamic file\n");
+  }
+
   fscanf(thermodynamic_file, "%lf\n%lf\n%lf\n%lf\n%lf", &temperature, &energy_density, &pressure, &baryon_chemical_potential, &net_baryon_density);
+
   fclose(thermodynamic_file);
 }
 
@@ -349,7 +361,7 @@ void FO_data_reader::read_surface_cpu_vh(FO_surf* surf_ptr)
 
 
   // write averaged thermodynamic variables to file (what happens if read from memory again?)
-  ofstream thermal_average("average_thermodynamic_quantities.dat", ios_base::out);
+  ofstream thermal_average("tables/thermodynamic/average_thermodynamic_quantities.dat", ios_base::out);
   thermal_average << setprecision(15) << T_avg << "\n" << E_avg << "\n" << P_avg << "\n" << muB_avg << "\n" << nB_avg;
   thermal_average.close();
 }
@@ -549,7 +561,7 @@ void FO_data_reader::read_surface_music(FO_surf* surf_ptr)
 
 
   // write averaged thermodynamic variables to file
-  ofstream thermal_average("average_thermodynamic_quantities.dat", ios_base::out);
+  ofstream thermal_average("tables/thermodynamic/average_thermodynamic_quantities.dat", ios_base::out);
   thermal_average << setprecision(15) << T_avg << "\n" << E_avg << "\n" << P_avg << "\n" << muB_avg << "\n" << nB_avg;
   thermal_average.close();
 }
@@ -709,7 +721,7 @@ void FO_data_reader::read_surface_hic_eventgen(FO_surf* surf_ptr)
   nB_avg /= max_volume;
 
   // write averaged thermodynamic variables to file
-  ofstream thermal_average("average_thermodynamic_quantities.dat", ios_base::out);
+  ofstream thermal_average("tables/thermodynamic/average_thermodynamic_quantities.dat", ios_base::out);
   thermal_average << setprecision(15) << T_avg << "\n" << E_avg << "\n" << P_avg << "\n" << muB_avg << "\n" << nB_avg;
   thermal_average.close();
 

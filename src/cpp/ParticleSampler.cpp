@@ -12,7 +12,6 @@
 #include <array>
 
 #include "iS3D.h"
-// #include "readindata.h"
 #include "EmissionFunction.h"
 #include "Arsenal.h"
 #include "GaussThermal.h"

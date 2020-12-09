@@ -28,31 +28,29 @@
 //   int	part[5];    // array of daughter particles Montecarlo numbers
 // };
 
-//a class to store basic particle ID, position and momenta for a sampled particle list
+
 class Sampled_Particle
 {
+  // info of a sampled particle in the particle list, which gets passed to an afterburner
+
 public:
-  // chosen particle index
-  int chosen_index = 0;
-  //PDG ID number
-  int mcID = 0;
-  //mass
-  double mass = 0.0;
-  //milne coordinate four vector of particle production point
-  double tau = 0.0;
-  double x = 0.0;
-  double y = 0.0;
-  double eta = 0.0;
 
-  //cartesian coordinates
-  double t = 0.0;
-  double z = 0.0;
+  int chosen_index = 0;     // chosen particle index
+  int mcID = 0;             // Monte-Carlo ID number
+  double mass = 0;          // mass [GeV]
 
-  //cartesian momentum four vector
-  double E = 0.0;
-  double px = 0.0;
-  double py = 0.0;
-  double pz = 0.0;
+  double tau = 0;           // spacetime position of sampled particle
+  double x = 0;
+  double y = 0;
+  double eta = 0;
+
+  double t = 0;             // cartesian coordinates
+  double z = 0;
+
+  double E = 0;             // cartesian momentum
+  double px = 0;
+  double py = 0;
+  double pz = 0;
 };
 
 #endif

@@ -8,26 +8,35 @@
 
 using namespace std;
 
-// should rename file local_rest_frame.cpp
 
 Milne_Basis::Milne_Basis(double ut, double ux, double uy, double un, double uperp, double utperp, double tau)
 {
-    Ut = ut;    Uy = uy;
-    Ux = ux;    Un = un;
+    Ut = ut;
+    Ux = ux;
+    Uy = uy;
+    Un = un;
 
     double sinhL = tau * un / utperp;
     double coshL = ut / utperp;
 
-    Xt = uperp * coshL;         Zt = sinhL;
-    Xn = uperp * sinhL / tau;   Zn = coshL / tau;
+    Xt = uperp * coshL;
+    Xx = 1;
+    Xn = uperp * sinhL / tau;
+    Xy = 0;
 
-    Xx = 1.0;   Yx = 0.0;
-    Xy = 0.0;   Yy = 1.0;
+    Yx = 0;
+    Yy = 1;
+
+    Zt = sinhL;
+    Zn = coshL / tau;
 
     if(uperp > 1.e-5) // stops (ux=0)/(uperp=0) nans for freezeout cells with no transverse flow
     {
-        Xx = utperp * ux / uperp;   Yx = - uy / uperp;
-        Xy = utperp * uy / uperp;   Yy = ux / uperp;
+        Xx = utperp * ux / uperp;
+        Xy = utperp * uy / uperp;
+
+        Yx = - uy / uperp;
+        Yy = ux / uperp;
     }
 }
 
