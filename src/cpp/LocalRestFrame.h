@@ -1,5 +1,5 @@
-#ifndef VISCOUS_CORRECTION_H
-#define VISCOUS_CORRECTION_H
+#ifndef LOCALRESTFRAME_H
+#define LOCALRESTFRAME_H
 
 class Milne_Basis
 {

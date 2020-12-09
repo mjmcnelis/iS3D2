@@ -12,15 +12,10 @@
 #include <array>
 
 #include "iS3D.h"
-#include "readindata.h"
+// #include "readindata.h"
 #include "EmissionFunction.h"
 #include "Arsenal.h"
-#include "ParameterReader.h"
-#include "DeltafData.h"
-// #include <gsl/gsl_sf_bessel.h>
 #include "GaussThermal.h"
-#include "Particle.h"
-#include "viscous_correction.h"
 
 using namespace std;
 
@@ -51,13 +46,20 @@ void EmissionFunctionArray::sample_dN_dphipdy(int chosen_index, double px, doubl
   // bin sampled dN/dphipdy
 
   double phip = atan2(py, px);
-  if(phip < 0.0) phip += two_pi;
+
+  if(phip < 0.0)
+  {
+    phip += two_pi;
+  }
 
   // bin index
   int iphip = (int)floor(phip / PHIP_WIDTH);
 
   // add counts
-  if(iphip >= 0 && iphip < PHIP_BINS) dN_dphipdy_count[chosen_index][iphip] += 1.0;
+  if(iphip >= 0 && iphip < PHIP_BINS)
+  {
+    dN_dphipdy_count[chosen_index][iphip] += 1.0;
+  }
 }
 
 void EmissionFunctionArray::sample_dN_2pipTdpTdy(int chosen_index, double px, double py)
@@ -69,7 +71,10 @@ void EmissionFunctionArray::sample_dN_2pipTdpTdy(int chosen_index, double px, do
   // bin index
   int ipT = (int)floor((pT - PT_MIN) / PT_WIDTH);
 
-  if(ipT >= 0 && ipT < PT_BINS) dN_2pipTdpTdy_count[chosen_index][ipT] += 1.0;
+  if(ipT >= 0 && ipT < PT_BINS)
+  {
+    dN_2pipTdpTdy_count[chosen_index][ipT] += 1.0;
+  }
 }
 
 void EmissionFunctionArray::sample_vn(int chosen_index, double px, double py)
@@ -78,7 +83,11 @@ void EmissionFunctionArray::sample_vn(int chosen_index, double px, double py)
 
   double pT = sqrt(px*px + py*py);
   double phi = atan2(py, px);
-  if(phi < 0.0) phi += two_pi;
+
+  if(phi < 0.0)
+  {
+    phi += two_pi;
+  }
 
   // pT bin index
   int ipT = (int)floor((pT - PT_MIN) / PT_WIDTH);
@@ -104,18 +113,31 @@ void EmissionFunctionArray::sample_dN_dX(int chosen_index, double tau, double x,
 
   double r = sqrt(x*x + y*y);
   double phi = atan2(y, x);
-  if(phi < 0.0) phi += two_pi;
+
+  if(phi < 0.0)
+  {
+    phi += two_pi;
+  }
 
   // bin indices
   int itau = (int)floor((tau - TAU_MIN) / TAU_WIDTH);
   int ir = (int)floor((r - R_MIN) / R_WIDTH);
   int iphi = (int)floor(phi / PHIP_WIDTH);
 
-  if(itau >= 0 && itau < TAU_BINS) dN_taudtaudy_count[chosen_index][itau] += 1.0;
+  if(itau >= 0 && itau < TAU_BINS)
+  {
+    dN_taudtaudy_count[chosen_index][itau] += 1.0;
+  }
 
-  if(ir >= 0 && ir < R_BINS) dN_twopirdrdy_count[chosen_index][ir] += 1.0;
+  if(ir >= 0 && ir < R_BINS)
+  {
+    dN_twopirdrdy_count[chosen_index][ir] += 1.0;
+  }
 
-  if(iphi >= 0 && iphi < PHIP_BINS) dN_dphisdy_count[chosen_index][iphi] += 1.0;
+  if(iphi >= 0 && iphi < PHIP_BINS)
+  {
+    dN_dphisdy_count[chosen_index][iphi] += 1.0;
+  }
 }
 
 
@@ -140,7 +162,10 @@ double pion_thermal_weight_max(double x, double chem)
   // rescale the pion thermal weight w_eq by the max value if m/T < 0.8554 (the max is local)
   // we assume no pion chemical potential (i.e. ignore non-equilibrium chemical potential EoS models)
 
-  if(chem != 0.0) printf("Error: pion has chemical potential\n");
+  if(chem != 0.0)
+  {
+    printf("pion_thermal_weight_max flag: pion has chemical potential\n");
+  }
 
   // x = mass / T < 0.8554
   double x2 = x * x;
@@ -153,7 +178,10 @@ double pion_thermal_weight_max(double x, double chem)
     (-0.3541350577684533 + 143218.69233952634*x - 24516.803600065778*x2 - 115811.59391199696*x3 +
      35814.36403387459*x4);
 
-  if(x < 0.1) printf("Out of data interpolation range: extrapolating fit...\n");
+  if(x < 0.1)
+  {
+    printf("pion_thermal_weight_max flag: interpolation outside data range, extrapolating fit...\n");
+  }
 
   double buffer = 1.00001; // ensures rescaled w_eq <= 1.0 numerically
 

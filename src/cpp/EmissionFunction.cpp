@@ -28,6 +28,9 @@
 
 using namespace std;
 
+
+
+
 // Class Lab_Momentum (can I move this to sampling kernel?)
 //------------------------------------------
 Lab_Momentum::Lab_Momentum(LRF_Momentum pLRF_in)
@@ -50,6 +53,9 @@ void Lab_Momentum::boost_pLRF_to_lab_frame(Milne_Basis basis_vectors, double ut,
     py    = E_LRF * uy  +  px_LRF * Xy  +  py_LRF * Yy;
     pn    = E_LRF * un  +  px_LRF * Xn  +  pz_LRF * Zn;
 }
+
+
+
 
 
 double compute_detA(Shear_Stress pimunu, double shear_mod, double bulk_mod)

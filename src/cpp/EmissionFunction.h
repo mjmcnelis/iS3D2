@@ -9,7 +9,7 @@
 #include "ParameterReader.h"
 #include "DeltafData.h"
 #include "Particle.h"
-#include "viscous_correction.h"
+#include "LocalRestFrame.h"
 
 using namespace std;
 
