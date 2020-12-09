@@ -10,17 +10,14 @@
 #include <chrono>
 #include <limits>
 #include <array>
-//#ifdef _OMP
-//#include <omp.h>
-//#endif
+
 #include "iS3D.h"
 #include "readindata.h"
-#include "emissionfunction.h"
-// #include "Stopwatch.h"
+#include "EmissionFunction.h"
 #include "Arsenal.h"
 #include "ParameterReader.h"
 #include "DeltafData.h"
-#include <gsl/gsl_sf_bessel.h> //for modified bessel functions
+// #include <gsl/gsl_sf_bessel.h>
 #include "GaussThermal.h"
 #include "Particle.h"
 #include "viscous_correction.h"

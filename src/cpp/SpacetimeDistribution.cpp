@@ -15,17 +15,15 @@
 //#endif
 #include "iS3D.h"
 #include "readindata.h"
-#include "emissionfunction.h"
+#include "EmissionFunction.h"
 #include "AnisoVariables.h"
-// #include "Stopwatch.h"
 #include "Arsenal.h"
 #include "Macros.h"
 #include "ParameterReader.h"
 #include "DeltafData.h"
-#include <gsl/gsl_sf_bessel.h> //for modified bessel functions
+#include <gsl/gsl_sf_bessel.h>
 #include <gsl/gsl_linalg.h>
 #include "GaussThermal.h"
-// #include "Particle.h"
 
 using namespace std;
 

@@ -18,7 +18,7 @@
 
 #include "iS3D.h"
 #include "readindata.h"
-#include "emissionfunction.h"
+#include "EmissionFunction.h"
 #include "Arsenal.h"
 #include "ParameterReader.h"
 #include "DeltafData.h"
