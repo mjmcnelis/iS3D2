@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 #include <cmath>
-#include "gaussThermal.h"
+#include "GaussThermal.h"
 
 // gauss integration routine
 double GaussThermal(double thermal_integrand(double pbar, double mbar, double alphaB, double baryon, double sign), double * pbar_root, double * pbar_weight, int pbar_pts, double mbar, double alphaB, double baryon, double sign)

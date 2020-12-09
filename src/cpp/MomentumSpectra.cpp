@@ -19,15 +19,15 @@
 #include "readindata.h"
 #include "emissionfunction.h"
 #include "AnisoVariables.h"
-#include "Stopwatch.h"
+// #include "Stopwatch.h"
 #include "Arsenal.h"
 #include "Macros.h"
 #include "ParameterReader.h"
 #include "DeltafData.h"
 #include <gsl/gsl_sf_bessel.h> //for modified bessel functions
 #include <gsl/gsl_linalg.h>
-#include "gaussThermal.h"
-#include "particle.h"
+#include "GaussThermal.h"
+// #include "particle.h"
 
 using namespace std;
 

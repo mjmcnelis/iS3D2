@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <complex>
 #include <array>
-#include <sys/time.h>
+#include <ctime>
 
 #ifdef OPENMP
   #include <omp.h>
@@ -19,13 +19,12 @@
 #include "iS3D.h"
 #include "readindata.h"
 #include "emissionfunction.h"
-#include "Stopwatch.h"
 #include "Arsenal.h"
 #include "ParameterReader.h"
 #include "DeltafData.h"
 #include <gsl/gsl_sf_bessel.h> //for modified bessel functions
-#include "gaussThermal.h"
-#include "particle.h"
+#include "GaussThermal.h"
+#include "Particle.h"
 
 using namespace std;
 
@@ -1008,8 +1007,10 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
 #ifdef OPENMP
     double t1 = omp_get_wtime();
 #else
-    Stopwatch sw;
-    sw.tic();
+    // Stopwatch sw;
+    // sw.tic();
+    clock_t start = clock();
+
 #endif
 
     printf("Allocating memory for individual arrays to hold particle and freezeout surface info\n");
@@ -1391,8 +1392,12 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
     double t2 = omp_get_wtime();
     cout << "\nSpectra calculation took " << (t2 - t1) << " seconds\n" << endl;
   #else
-    sw.toc();
-    cout << "\nSpectra calculation took " << sw.takeTime() << " seconds\n" << endl;
+    // sw.toc();
+    // cout << "\nSpectra calculation took " << sw.takeTime() << " seconds\n" << endl;
+    double duration = (clock() - start) / (double)CLOCKS_PER_SEC;
+
+    cout << "\nSpectra calculation took " << duration << " seconds\n" << endl;
+
   #endif
   }
 

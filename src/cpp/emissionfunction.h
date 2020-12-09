@@ -8,7 +8,7 @@
 #include "iS3D.h"
 #include "ParameterReader.h"
 #include "DeltafData.h"
-#include "particle.h"
+#include "Particle.h"
 #include "viscous_correction.h"
 
 using namespace std;

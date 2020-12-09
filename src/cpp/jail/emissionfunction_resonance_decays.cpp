@@ -42,8 +42,6 @@ using namespace std;
 // the script is laid out now but needs more testing
 // - reproduce the plots in the old paper based
 // - there's an analytical
-// - Chun's discussion didn't really have anything helpful to add to understanding the old code
-
 
 // with grouping it took 185s for the boost invariant calculation
 // without grouping it takes 204s (not significanty faster...)

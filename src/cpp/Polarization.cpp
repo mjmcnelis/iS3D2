@@ -14,13 +14,13 @@
 #include "iS3D.h"
 #include "readindata.h"
 #include "emissionfunction.h"
-#include "Stopwatch.h"
+// #include "Stopwatch.h"
 #include "Arsenal.h"
 #include "ParameterReader.h"
 #include "DeltafData.h"
 #include <gsl/gsl_sf_bessel.h> //for modified bessel functions
-#include "gaussThermal.h"
-#include "particle.h"
+#include "GaussThermal.h"
+// #include "particle.h"
 
 using namespace std;
 

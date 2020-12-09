@@ -13,7 +13,7 @@
 #include "Arsenal.h"
 #include "ParameterReader.h"
 #include "Table.h"
-#include "gaussThermal.h"
+// #include "GaussThermal.h"
 
 using namespace std;
 

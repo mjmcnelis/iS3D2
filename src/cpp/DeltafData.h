@@ -4,7 +4,7 @@
 
 #include "ParameterReader.h"
 #include "readindata.h"
-#include "gaussThermal.h"
+#include "GaussThermal.h"
 #include <fstream>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
