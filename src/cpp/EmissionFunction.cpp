@@ -1215,7 +1215,7 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
           }
           case 5:
           {
-            calculate_dN_pTdpTdphidy_famod(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, gla, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
+            calculate_dN_pTdpTdphidy_famod(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, gla, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
             break;
           }
           default:
