@@ -1069,8 +1069,7 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
   long plpt_negative = 0;                 // number of times pl < 0 (use continue or set fa = feq?)
   double tau_pl = 0;                      // tau until pl > 0
 
-  long reconstruction_fail = 0;           // track success rate of reconstructed anisotropic variables
-  long reconstruction_success = 0;
+  long reconstruction_fail = 0;           // track reconstruction of anisotropic variables
   long total_iterations = 0;
 
   double cosphi_values[phi_tab_length];   // phi arrays
@@ -1117,19 +1116,9 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
     }
   }
 
-  // // gauss laguerre roots
-  // const int pbar_pts = laguerre->points;
-
-  // double * pbar_root1 = laguerre->root[1];          // a = 1, 2  gla needed
-  // double * pbar_root2 = laguerre->root[2];
-
-  // double * pbar_weight1 = laguerre->weight[1];      // I might need more than this...
-  // double * pbar_weight2 = laguerre->weight[2];
-
 #ifndef ABORT_GSL
     gsl_set_error_handler_off();
 #endif
-
 
   // allocate a huge array to hold momentum spectra for each chunk
   long npart = (long)number_of_chosen_particles;
@@ -1303,41 +1292,42 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
       double aL = 1;                          // longitudinal momentum scale
       double upsilonB = alphaB;               // effective chemical potential (not reconstructed atm)
 
-      bool fa_famod_breaks_down = false;      // f = famod is default, if true use f = feq instead
-      Nparticles = (int)fmin(300, Nparticles);// maybe don't need all the hadrons (first 300)
+      bool fa_famod_breaks_down = false;      // f = famod by default, if true use f = feq instead
+      Nparticles = (int)fmin(320, Nparticles);// include most (not all) hadrons to avoid spurious convergence in root solver (saves time)
 
-
-      // use another pragma here to add pl_negative
       if(pl < 0 || pt < 0)                    // don't bother reconstructing anisotropic variables
       {
+      #ifdef MONITOR_FAMOD
         plpt_negative++;
+        tau_pl = tau;
+      #endif
+
+        // continue;                          // skipping these cells has negligible impact on azithumally-averaged pT spectra (not sure about v2)
+
         fa_famod_breaks_down = true;          // fa breaks down (and so will famod)
       }
-      else                                    // try reconstructing anisotropic variables
+      else                                    // reconstruct anisotropic variables
       {
-        // this will need updating to include chemical potential
+        // this function will need updating to include chemical potential
 
         aniso_variables X_aniso = find_anisotropic_variables(E, P, pl, pt, lambda, aT, aL, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
 
-        if(X_aniso.did_not_find_solution)     // reconstruction fails sometimes
+        if(X_aniso.did_not_find_solution)     // in case reconstruction fails
         {
           fa_famod_breaks_down = true;        // fa breaks down (and so will famod)
 
-          printf("\nreconstruction fail (steps = %d)\n", X_aniso.number_of_iterations);
-
+        #ifdef MONITOR_FAMOD
+        #ifdef FLAGS
+          printf("\nfailed to reconstruct anisotropic variables (iterations = %d)\n", X_aniso.number_of_iterations);
+        #endif
           reconstruction_fail += 1;
+        #endif
         }
         else
         {
           lambda = X_aniso.lambda;            // get the solution
           aT = X_aniso.aT;
           aL = X_aniso.aL;
-
-          //printf("reconstruction success (steps = %d)\n", X_aniso.number_of_iterations);
-
-          reconstruction_success += 1;
-
-
 
           // if(!first_reconstruction)        // do this later
           // {
@@ -1346,15 +1336,14 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
           //   aT
           // }
         }
-
+      #ifdef MONITOR_FAMOD
         total_iterations += X_aniso.number_of_iterations;
-
+      #endif
       }
 
       // not sure how to start setting previous values (it should be the first successful reconstruction, not icell = 0)
 
 
-      // do this once I've got the setup right
 
 
 
@@ -1363,7 +1352,8 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
       double shear_coeff = 0;    // 1 / (2.betapi_perp)
       double diff_coeff = 0;     // 1 / betaW_perp
 
-      // perhaps I can use ~ 1/ 2.betapi as a substitute?
+
+
 
 
       // leading order deformation matrix Aij (diagonal)
@@ -1375,22 +1365,22 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
 
 
       // residual shear deformation matrix Cij (asymmetric)
-      double Cxx = 1  +  shear_coeff * piTxx_LRF;
+      double Cxx = 1.  +  shear_coeff * piTxx_LRF;
       double Cxy = shear_coeff * piTxy_LRF;
       double Cxz = diff_coeff * WTzx_LRF * aT / (aT + aL);
 
       double Cyx = Cxy;
-      double Cyy = 1  +  shear_coeff * piTyy_LRF;
+      double Cyy = 1.  +  shear_coeff * piTyy_LRF;
       double Cyz = diff_coeff * WTzy_LRF * aT / (aT + aL);
 
       double Czx = diff_coeff * WTzx_LRF * aL / (aT + aL);
       double Czy = diff_coeff * WTzy_LRF * aL / (aT + aL);
-      double Czz = 1;
+      double Czz = 1.;
 
       double detC = Cxx * (Cyy * Czz  -  Cyz * Czy)  -  Cxy * (Cyx * Czz  -  Cyz * Czx)  +  Cxz * (Cyx * Czy  -  Cyy * Czx);
 
 
-      // total momentum transformation matrix Bij (symmetric)
+      // total momentum transformation matrix Bij = Cik.Akj (symmetric)
       double Bxx = Axx  +  aT * shear_coeff * piTxx_LRF;
       double Bxy = aT * shear_coeff * piTxy_LRF;
       double Bxz = diff_coeff * WTzx_LRF * aT * aL / (aT + aL);
@@ -1404,6 +1394,7 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
       double Bzz = Azz;
 
       double detB = detC * detA;
+      double detB_bulk_two_thirds = (2.*aT + aL) * (2.*aT + aL) / 9.;   // Bij_bulk = (2aT + aL)/3 . Iij
 
 
       // set momentum transformation matrix
@@ -1435,64 +1426,38 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
         }
       }
 
-
-
-      // *** need to review this (check feqmod breakdown function)
-
-      //fa_famod_breaks_down = false;      // replace with a function (or if/else statement)
-
-
-
-
-      #pragma omp critical
-      if(fa_famod_breaks_down)
+      if(detB <= detB_min)
       {
-        breakdown++;
-        tau_breakdown = tau;
+        fa_famod_breaks_down = true;
       }
 
-      // uniformly rescale eta space by detA if modified momentum space elements are shrunk
-      // this rescales the dsigma components orthogonal to the eta direction (only works for 2+1d, y = 0)
-      // for integrating modified distribution with narrow (y-eta) distributions
+      // rescale eta_s coordinate by detB / detB_bulk when integrating modified anisotropic
+      // distribution with very narrow (y-eta) peaks (only used in 2+1d, y = 0)
       double eta_scale = 1;
-
-
-      // I should rescale by the total deformation detB
-
-
-      // *** need to review this
 
       if(detB > detB_min && DIMENSION == 2)
       {
-        eta_scale = detB;     // how does this enter?   rescale by detB (rather than detC)
-
-        eta_scale = 1;
+        eta_scale = detB / detB_bulk_two_thirds;
       }
 
-
-
-      // *** need to review this (Zn = 1/detC)
-
-      // double renorm = detB / detC;                // renormalization factor (for dimension = 2)
-      double renorm = 1 / detC;
-
-      if(DIMENSION == 3)
-      {
-        renorm = 1. / detC;
-      }
+      double renorm = eta_scale / detC;             // renormalization factor (multiplied by rescale factor)
 
       if((std::isnan(renorm) || std::isinf(renorm)))
       {
       #ifdef FLAGS
         printf("calculate_dN_pTdpTdphidy_famod flag: renormalization factor = %lf is negative\n", renorm);
       #endif
-        continue;
+        fa_famod_breaks_down = true;
       }
 
+    #ifdef MONITOR_FAMOD
+      if(fa_famod_breaks_down)
+      {
+        breakdown++;
+        tau_breakdown = tau;
+      }
+    #endif
 
-
-
-      // loop over hadrons
       for(long ipart = 0; ipart < npart; ipart++)   // loop over chosen particles
       {
         long iS0D = pT_tab_length * ipart;
@@ -1535,10 +1500,6 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
 
                 bool fa_famod_breaks_down_narrow = false;
 
-
-
-                // *** review this
-
                 if(DIMENSION == 3 && !fa_famod_breaks_down)
                 {
                   if(detB < 0.01 && fabs(y - eta) < detB)
@@ -1547,16 +1508,14 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
                   }
                 }
 
-
-
                 double p_dsigma;  // p.d\sigma
                 double f;         // fa, famod (or feq if fa, famod breaks down)
 
                 // calculate distribution
-                if(fa_famod_breaks_down || fa_famod_breaks_down_narrow) // set f = feq
+                if(fa_famod_breaks_down || fa_famod_breaks_down_narrow)   // set f = feq
                 {
-                  double pt = mT * cosh(y - eta);          // p^\tau [GeV]
-                  double pn = mT_over_tau * sinh(y - eta); // p^\eta [GeV/fm]
+                  double pt = mT * cosh(y - eta);           // p^\tau [GeV]
+                  double pn = mT_over_tau * sinh(y - eta);  // p^\eta [GeV/fm]
                   double tau2_pn = tau2 * pn;
 
                   p_dsigma = pt * dat  +  px * dax  +  py * day  +  pn * dan;
@@ -1612,7 +1571,7 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
                     matrix_multiplication(B_copy, pLRF_mod_prev, pLRF_prev, 3, 3);  // compute pLRF error
                     vector_subtraction(pLRF, pLRF_prev, dpLRF, 3);
 
-                    dp = sqrt(dpLRF[0] * dpLRF[0]  +  dpLRF[1] * dpLRF[1]  +  dpLRF[2] * dpLRF[2]);
+                    dp = sqrt(dpLRF[0]*dpLRF[0] + dpLRF[1]*dpLRF[1] + dpLRF[2]*dpLRF[2]);
 
                     if(dp <= eps)
                     {
@@ -1629,12 +1588,7 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
 
                   double E_mod = sqrt(mass2  +  px_LRF_mod * px_LRF_mod  +  py_LRF_mod * py_LRF_mod  +  pz_LRF_mod * pz_LRF_mod);
 
-
-                  // *** review this
-
                   f = fabs(renorm) / (exp(E_mod / lambda  -  chem_effect)  +  sign); // compute famod
-
-
                 }
 
                 eta_integral += (eta_weight * p_dsigma * f);      // add contribution to integral
@@ -1694,15 +1648,14 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
   } // particle species (ipart)
 
 
-  printf("\nfeqmod breaks down for %ld / %ld cells until t = %.3f fm/c\n", breakdown, FO_length, tau_breakdown);
+#ifdef MONITOR_FAMOD
+  printf("\nfamod breaks down for %ld / %ld cells until t = %.3f fm/c\n", breakdown, FO_length, tau_breakdown);
   printf("pl went negative for %ld / %ld cells until t = %.3f fm/c\n\n", plpt_negative, FO_length, tau_pl);
-
   printf("Number of reconstruction failures = %ld\n", reconstruction_fail);
-  printf("Number of reconstruction successes = %ld\n", reconstruction_success);
   printf("Average number of iterations = %lf\n\n", (double)total_iterations / (double)FO_length);
+#endif
 
-  //free memory
-  free(dN_pTdpTdphidy_all);
+  free(dN_pTdpTdphidy_all);     // free memory
 }
 
 

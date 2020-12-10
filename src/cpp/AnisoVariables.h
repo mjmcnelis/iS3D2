@@ -2,9 +2,10 @@
 #ifndef ANISOVARIABLES_H_
 #define ANISOVARIABLES_H_
 
-const int N_max = 100;			// max number of iterations
-const double tol_dX = 1.e-4;	// tolerance error for dX (1.e-4)
-const double tol_F = 1.e-4;		// tolerance error for F
+const int N_max = 100;				// max number of iterations
+const int partial_backtracks = 20;	// max number of partial backtracks (default = 20)
+const double tol_dX = 1.e-4;		// tolerance error for dX (1.e-4)
+const double tol_F = 1.e-4;			// tolerance error for F
 
 const double delta = 0.01;		// piecewise interval where hypergeometric functions are taylor expanded
 

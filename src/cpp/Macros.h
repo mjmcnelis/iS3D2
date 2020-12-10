@@ -12,6 +12,8 @@
 
 #define ABORT_GSL				// turn on gsl abort if error in gsl matrix solver (program quits)
 
+#define MONITOR_FAMOD			// monitor breakdown of famod and reconstruction of anisotropic variables (turn off for OpenMP or real runs)
+
 // maybe I should make a JETSCAPE macro...
 
 // need to write in dependencies?

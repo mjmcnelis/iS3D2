@@ -319,12 +319,12 @@ double line_backtrack(double Ea, double PTa, double PLa, int Nparticles, double 
 	double f = (F[0] * F[0]  +  F[1] * F[1]  +  F[2] * F[2]) / 2.;
 	double gprime0 = - 2. * g0;
 
-	double l = 1.;                               	// default value for partial step parameter
+	double l = 1;                               	// default value for partial step parameter
 	double alpha = 0.0001;                       	// descent rate
 
 	double lroot, lprev, fprev;
 
-	for(int n = 0; n < 20; n++)                     // line search iterations (max is 20)
+	for(int n = 0; n < partial_backtracks; n++)		// line search iterations
 	{
 		if((l * dX_abs) <= tol_dX)                  // check if l.|dX| within desired tolerance
 		{
@@ -372,7 +372,8 @@ double line_backtrack(double Ea, double PTa, double PLa, int Nparticles, double 
 		lprev = l;                                  // store current values for the next iteration
 		fprev = f;
 
-		l = fmax(lroot, 0.1 * l);                   // update l and f
+		// l = fmax(lroot, 0.1 * l);                   // update l and f
+		l = fmax(lroot, 0.5 * l);                   // update l and f
 
 		for(int i = 0; i < 3; i++)
 		{
@@ -393,9 +394,6 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 	double Ea = E;		// kinetic energy density
 	double PTa = pt;	// kinetic transverse pressure
 	double PLa = pl;	// kinetic longitudinal pressure
-
-	PTa = P;		// cross check
-	PLa = P;
 
 	// shouldn't I check whether lambda = T will reproduce Ea = E, PTa = PLa = P?
 
