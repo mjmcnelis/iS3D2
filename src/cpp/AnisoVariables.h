@@ -92,7 +92,16 @@ typedef struct
 
 } aniso_variables;
 
+typedef struct
+{
+	double betapiperp;
+	double betaWperp;
+
+} famod_coefficient;
+
 aniso_variables find_anisotropic_variables(double E, double P, double pl, double pt, double lambda_0, double aT_0, double aL_0, int Nparticles, double *Mass, double *Sign, double *Degeneracy, double *Baryon);
+
+famod_coefficient compute_famod_coefficient(double lambda, double aT, double aL, int Nparticles, double *Mass, double *Sign, double *Degeneracy, double *Baryon);
 
 
 #endif

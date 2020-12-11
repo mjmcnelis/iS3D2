@@ -1343,18 +1343,14 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
 
       // not sure how to start setting previous values (it should be the first successful reconstruction, not icell = 0)
 
+      // compute famod coefficients
+      famod_coefficient famod = compute_famod_coefficient(lambda, aT, aL, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
 
+      double betapiperp = famod.betapiperp;
+      double betaWperp = famod.betaWperp;
 
-
-
-      // compute aniso CE coefficients (after reconstruct aniso variables)
-
-      double shear_coeff = 0;    // 1 / (2.betapi_perp)
-      double diff_coeff = 0;     // 1 / betaW_perp
-
-
-
-
+      double shear_coeff = 0.5 / betapiperp;
+      double diff_coeff = 1. / betaWperp;
 
       // leading order deformation matrix Aij (diagonal)
       double Axx = aT;

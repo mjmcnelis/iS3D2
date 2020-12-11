@@ -146,13 +146,13 @@ void compute_J(double Ea, double PTa, double PLa, int Nparticles, double *Mass, 
   	double lambda_aL3 = lambda * aL2 * aL;
 	double common_factor = aT2 * aL * lambda2 * lambda3 / four_pi2_hbarC3;
 
-    double I_2001 = 0;					// anisotropic integrals
-    double I_2011 = 0;
-    double I_2201 = 0;
+    double J_2001 = 0;					// anisotropic integrals
+    double J_2011 = 0;
+    double J_2201 = 0;
 
-    double I_402m1 = 0;
-    double I_421m1 = 0;
-    double I_440m1 = 0;
+    double J_402m1 = 0;
+    double J_421m1 = 0;
+    double J_440m1 = 0;					// this is wrong (missing quantum statistics derivative)
 
     for(int n = 0; n < Nparticles; n++)	// loop over hadrons in PDG
 	{
@@ -170,13 +170,13 @@ void compute_J(double Ea, double PTa, double PLa, int Nparticles, double *Mass, 
 		double mbar2 = mbar * mbar;
 		double chem = 0;				// replace w/ baryon * upsilonB (anisotropic version of baryon * alphaB)
 
-		double I_2001_n = 0;			// individual hadron contribution to anisotropic integrals
-		double I_2011_n = 0;
-    	double I_2201_n = 0;
+		double J_2001_n = 0;			// individual hadron contribution to anisotropic integrals
+		double J_2011_n = 0;
+    	double J_2201_n = 0;
 
-    	double I_402m1_n = 0;
-    	double I_421m1_n = 0;
-    	double I_440m1_n = 0;
+    	double J_402m1_n = 0;
+    	double J_421m1_n = 0;
+    	double J_440m1_n = 0;
 
     	for(int i = 0; i < pbar_pts; i++)		// radial momentum integration loop
 		{
@@ -250,51 +250,52 @@ void compute_J(double Ea, double PTa, double PLa, int Nparticles, double *Mass, 
 			#endif
 			}
 
-			double common_weight = weight * exp(pbar) / (exp(Ebar + chem) + sign);
+			double quantum_stat = exp(Ebar + chem) + sign;
+			double common_weight = weight * exp(pbar + Ebar) / (quantum_stat * quantum_stat);
 
-			I_2001_n += Ebar * common_weight * t_200 * w;
-			I_2011_n += Ebar * common_weight * t_201 / w;
-			I_2201_n += Ebar * common_weight * t_220 / w;
+			J_2001_n += Ebar * common_weight * t_200 * w;
+			J_2011_n += Ebar * common_weight * t_201 / w;
+			J_2201_n += Ebar * common_weight * t_220 / w;
 
-			I_402m1_n += pbar2 / Ebar * common_weight * t_402 / w;
-	    	I_421m1_n += pbar2 / Ebar * common_weight * t_421 / w;
-	    	I_440m1_n += pbar2 / Ebar * common_weight * t_440 / w;
+			J_402m1_n += pbar2 / Ebar * common_weight * t_402 / w;
+	    	J_421m1_n += pbar2 / Ebar * common_weight * t_421 / w;
+	    	J_440m1_n += pbar2 / Ebar * common_weight * t_440 / w;
 		}
 
-		I_2001_n *= degeneracy;			// multiply by degeneracy factor
-		I_2011_n *= degeneracy;
-    	I_2201_n *= degeneracy;
+		J_2001_n *= degeneracy;			// multiply by degeneracy factor
+		J_2011_n *= degeneracy;
+    	J_2201_n *= degeneracy;
 
-    	I_402m1_n *= degeneracy;
-    	I_421m1_n *= degeneracy;
-    	I_440m1_n *= degeneracy;
+    	J_402m1_n *= degeneracy;
+    	J_421m1_n *= degeneracy;
+    	J_440m1_n *= degeneracy;
 
 
-		I_2001 += I_2001_n;				// add individual hadron contribution
-		I_2011 += I_2011_n;
-    	I_2201 += I_2201_n;
+		J_2001 += J_2001_n;				// add individual hadron contribution
+		J_2011 += J_2011_n;
+    	J_2201 += J_2201_n;
 
-    	I_402m1 += I_402m1_n;
-    	I_421m1 += I_421m1_n;
-    	I_440m1 += I_440m1_n;
+    	J_402m1 += J_402m1_n;
+    	J_421m1 += J_421m1_n;
+    	J_440m1 += J_440m1_n;
     }
 
-	I_2001 *= common_factor;			// multiply by common factor (and other things)
-	I_2011 *= common_factor * aT2 / 2.;
-	I_2201 *= common_factor * aL2;
+	J_2001 *= common_factor;			// multiply by common factor (and other things)
+	J_2011 *= common_factor * aT2 / 2.;
+	J_2201 *= common_factor * aL2;
 
-	I_402m1 *= common_factor * aT2 * aT2 / 8.;
-	I_421m1 *= common_factor * aT2 * aL2 / 2.;
-	I_440m1 *= common_factor * aL2 * aL2;
+	J_402m1 *= common_factor * aT2 * aT2 / 8.;
+	J_421m1 *= common_factor * aT2 * aL2 / 2.;
+	J_440m1 *= common_factor * aL2 * aL2;
 
 	double Eai =  F[0] + Ea;     		// compute Eai, PTai, PLai from F
 	double PTai = F[1] + PTa;
 	double PLai = F[2] + PLa;
 
 	// compute Jacobian
-    J[0][0] = I_2001 / lambda2;	  		J[1][0] = I_2011 / lambda2;				J[2][0] = I_2201 / lambda2;
-    J[0][1] = 2. * (Eai + PTai) / aT;  	J[1][1] = 4. * I_402m1 / lambda_aT3;	J[2][1] = 2. * I_421m1 / lambda_aT3;
-    J[0][2] = (Eai + PLai) / aL;	  	J[1][2] = I_421m1 / lambda_aL3;      	J[2][2] = I_440m1 / lambda_aL3;
+    J[0][0] = J_2001 / lambda2;			J[0][1] = 2. * (Eai + PTai) / aT;		J[0][2] = (Eai + PLai) / aL;
+    J[1][0] = J_2011 / lambda2;			J[1][1] = 4. * J_402m1 / lambda_aT3;	J[1][2] = J_421m1 / lambda_aL3;
+    J[2][0] = J_2201 / lambda2;			J[2][1] = 2. * J_421m1 / lambda_aT3;	J[2][2] = J_440m1 / lambda_aL3;
 }
 
 
@@ -394,8 +395,6 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 	double Ea = E;		// kinetic energy density
 	double PTa = pt;	// kinetic transverse pressure
 	double PLa = pl;	// kinetic longitudinal pressure
-
-	// shouldn't I check whether lambda = T will reproduce Ea = E, PTa = PLa = P?
 
 	if(Ea < 0 || PTa < 0 || PLa < 0)
 	{
@@ -537,9 +536,9 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 		}
 	}	// newton iteration (n)
 
-// #ifdef FLAGS
-// 	printf("find_anisotropic_variables flag: exceeded max number of iterations on (lambda_0, aT_0, aL_0) = (%lf, %lf, %lf) --> X = (%lf, %lf, %lf)\n", lambda_0, aT_0, aL_0, X[0], X[1], X[2]);
-// #endif
+#ifdef FLAGS
+	printf("find_anisotropic_variables flag: exceeded max number of iterations on (lambda_0, aT_0, aL_0) = (%lf, %lf, %lf) --> X = (%lf, %lf, %lf)\n", lambda_0, aT_0, aL_0, X[0], X[1], X[2]);
+#endif
 
 	aniso_variables variables;
 	variables.lambda = lambda_0;
@@ -553,6 +552,111 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
   	gsl_vector_free(x);
 
 	return variables;
+}
+
+
+famod_coefficient compute_famod_coefficient(double lambda, double aT, double aL, int Nparticles, double *Mass, double *Sign, double *Degeneracy, double * Baryon)
+{
+	famod_coefficient famod;
+
+	double lambda2 = lambda * lambda;
+	double aT2 = aT * aT;				// useful expressions
+	double aL2 = aL * aL;
+	double aT2_minus_aL2 = aT2 - aL2;
+	double common_factor = aT2 * aL * lambda * lambda2 * lambda2 / four_pi2_hbarC3;
+
+    double J_402m1 = 0;					// anisotropic integrals
+    double J_421m1 = 0;
+
+    for(int n = 0; n < Nparticles; n++)	// loop over hadrons in PDG
+	{
+		double mass = Mass[n];			// particle info from PDG arrays
+		double sign = Sign[n];
+		double degeneracy = Degeneracy[n];
+		double baryon = Baryon[n];
+
+		if(mass == 0)
+		{
+			continue;					// skip photons
+		}
+
+		double mbar = mass / lambda;
+		double mbar2 = mbar * mbar;
+		double chem = 0;				// replace w/ baryon * upsilonB (anisotropic version of baryon * alphaB)
+
+    	double J_402m1_n = 0;			// individual hadron contribution to anisotropic integrals
+    	double J_421m1_n = 0;
+
+    	for(int i = 0; i < pbar_pts; i++)		// radial momentum integration loop
+		{
+			double pbar =     pbar_root_a3[i];	// pbar roots and weights for a = 3 (a = n + s)
+			double weight = pbar_weight_a3[i];
+
+			double pbar2 = pbar * pbar;
+			double Ebar = sqrt(pbar2  +  mbar2);
+
+			double w = sqrt(aL2  +  mbar2 / pbar2);
+			double z = aT2_minus_aL2 / (w * w);
+			double z2 =  z * z;
+
+	  		double t_402;						// hypergeometric functions
+	  		double t_421;
+
+			if(z > delta)						// compute hypergeometric functions
+			{
+				double sqrtz = sqrt(z);
+				double t = atan(sqrtz) / sqrtz;
+
+				t_402 = (3. * (z - 1.)  +  (z * (3.*z - 2.) + 3.) * t) / (4. * z2);
+				t_421 = (3.  +  z  +  (1. + z) * (z - 3.) * t) / (4. * z2);
+			}
+			else if(z < -delta && z > -1.)
+			{
+				double sqrtmz = sqrt(-z);
+				double t = atanh(sqrtmz) / sqrtmz;
+
+				t_402 = (3. * (z - 1.)  +  (z * (3.*z - 2.) + 3.) * t) / (4. * z2);
+				t_421 = (3.  +  z  +  (1. + z) * (z - 3.) * t) / (4. * z2);
+			}
+			else if(fabs(z) <= delta)
+			{
+				double z3 = z2 * z;
+				double z4 = z3 * z;
+				double z5 = z4 * z;
+				double z6 = z5 * z;
+
+				t_402 = 1.0666666666666667 - 0.4571428571428572*z + 0.3047619047619048*z2 - 0.23088023088023088*z3 + 0.1864801864801865*z4 - 0.15664335664335666*z5 + 0.13514328808446457*z6;
+
+				t_421 = 0.2666666666666666 - 0.0761904761904762*z + 0.0380952380952381*z2 - 0.023088023088023088*z3 + 0.015540015540015537*z4 - 0.011188811188811189*z5 + 0.00844645550527904*z6;
+			}
+			else
+			{
+			#ifdef FLAGS
+				printf("compute_famod_coefficient flag: z = %lf is out of bounds\n", z);
+			#endif
+			}
+
+			double quantum_stat = exp(Ebar + chem) + sign;
+			double common_weight = weight * exp(pbar + Ebar) / (quantum_stat * quantum_stat);
+
+			J_402m1_n += pbar2 / Ebar * common_weight * t_402 / w;
+	    	J_421m1_n += pbar2 / Ebar * common_weight * t_421 / w;
+		}
+
+    	J_402m1_n *= degeneracy;		// multiply by degeneracy factor
+    	J_421m1_n *= degeneracy;
+
+    	J_402m1 += J_402m1_n;			// add individual hadron contribution
+    	J_421m1 += J_421m1_n;
+    }
+
+	J_402m1 *= common_factor * aT2 * aT2 / 8.;	// multiply by common factor (and other things)
+	J_421m1 *= common_factor * aT2 * aL2 / 2.;
+
+	famod.betapiperp = J_402m1 / (aT2 * lambda);
+	famod.betaWperp  = J_421m1 / (aT * aL * lambda);
+
+	return famod;
 }
 
 
