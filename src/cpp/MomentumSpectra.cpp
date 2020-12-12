@@ -1129,11 +1129,10 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
   #pragma omp parallel for
   for(long n = 0; n < CORES; n++)
   {
-    double lambda_prev;   // anisotropic variables from previous cell
+    double lambda_prev;                                       // anisotropic variables from previous cell
     double aT_prev;
     double aL_prev;
-
-    bool first_reconstruction = false;  // tracks the first reconstruction of anisotropic variables
+    bool previous_reconstruction_success = false;                // tracks reconstruction of anisotropic variables
 
     double **B_copy = (double**)calloc(3, sizeof(double*));   // momentum transformation matrix
     double **B_inv  = (double**)calloc(3, sizeof(double*));
@@ -1302,26 +1301,54 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
         tau_pl = tau;
       #endif
 
-        // continue;                          // skipping these cells has negligible impact on azithumally-averaged pT spectra (not sure about v2)
-
         fa_famod_breaks_down = true;          // fa breaks down (and so will famod)
       }
       else                                    // reconstruct anisotropic variables
       {
+        if(previous_reconstruction_success)
+        {
+          lambda = lambda_prev;               // use previous values as initial guess
+          aT = aT_prev;
+          aL = aL_prev;
+        }
+
         // this function will need updating to include chemical potential
 
-        aniso_variables X_aniso = find_anisotropic_variables(E, P, pl, pt, lambda, aT, aL, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
+        aniso_variables X_aniso = find_anisotropic_variables(E, pl, pt, lambda, aT, aL, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
 
-        if(X_aniso.did_not_find_solution)     // in case reconstruction fails
+        if(X_aniso.did_not_find_solution && previous_reconstruction_success)
         {
-          fa_famod_breaks_down = true;        // fa breaks down (and so will famod)
+          lambda = T;                         // try equilibrium initial guess in case first reconstruction attempt fails
+          aT = 1;
+          aL = 1;
 
-        #ifdef MONITOR_FAMOD
-        #ifdef FLAGS
-          printf("\nfailed to reconstruct anisotropic variables (iterations = %d)\n", X_aniso.number_of_iterations);
-        #endif
-          reconstruction_fail += 1;
-        #endif
+          X_aniso = find_anisotropic_variables(E, pl, pt, lambda, aT, aL, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
+
+          if(X_aniso.did_not_find_solution)
+          {
+            fa_famod_breaks_down = true;      // fa breaks down (and so will famod)
+
+          #ifdef MONITOR_FAMOD
+          #ifdef FLAGS
+            printf("\nfailed to reconstruct anisotropic variables at cell = %ld (iterations = %d)\n", icell, X_aniso.number_of_iterations);
+          #endif
+            reconstruction_fail += 1;
+          #endif
+
+            previous_reconstruction_success = false;
+          }
+          else
+          {
+            lambda = X_aniso.lambda;          // get the solution
+            aT = X_aniso.aT;
+            aL = X_aniso.aL;
+
+            lambda_prev = lambda;             // set initial guess for next reconstruction
+            aT_prev = aT;
+            aL_prev = aL;
+
+            previous_reconstruction_success = true;
+          }
         }
         else
         {
@@ -1329,12 +1356,11 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
           aT = X_aniso.aT;
           aL = X_aniso.aL;
 
-          // if(!first_reconstruction)        // do this later
-          // {
-          //   previous_reconstructed = true;
-          //   lambda_prev = lambda;
-          //   aT
-          // }
+          lambda_prev = lambda;               // set initial guess for next reconstruction
+          aT_prev = aT;
+          aL_prev = aL;
+
+          previous_reconstruction_success = true;
         }
       #ifdef MONITOR_FAMOD
         total_iterations += X_aniso.number_of_iterations;
@@ -1453,6 +1479,10 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
         tau_breakdown = tau;
       }
     #endif
+
+
+      continue;
+
 
       for(long ipart = 0; ipart < npart; ipart++)   // loop over chosen particles
       {

@@ -390,8 +390,15 @@ double line_backtrack(double Ea, double PTa, double PLa, int Nparticles, double 
 }
 
 
-aniso_variables find_anisotropic_variables(double E, double P, double pl, double pt, double lambda_0, double aT_0, double aL_0, int Nparticles, double *Mass, double *Sign, double *Degeneracy, double * Baryon)
+aniso_variables find_anisotropic_variables(double E, double pl, double pt, double lambda_0, double aT_0, double aL_0, int Nparticles, double *Mass, double *Sign, double *Degeneracy, double * Baryon)
 {
+	gsl_vector *x = gsl_vector_alloc(3);					// holds dX
+    gsl_permutation *p = gsl_permutation_alloc(3);			// permutation vector
+
+#ifndef ABORT_GSL
+    gsl_set_error_handler_off();
+#endif
+
 	double Ea = E;		// kinetic energy density
 	double PTa = pt;	// kinetic transverse pressure
 	double PLa = pl;	// kinetic longitudinal pressure
@@ -399,7 +406,7 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 	if(Ea < 0 || PTa < 0 || PLa < 0)
 	{
 	#ifdef FLAGS
-		printf("find_anisotropic_variables flag: (E, p, pt, pl) = (%lf, %lf, %lf, %lf) is negative\n", Ea, P, PTa, PLa);
+		printf("find_anisotropic_variables flag: (E, pt, pl) = (%lf, %lf, %lf) is negative\n", Ea, PTa, PLa);
 	#endif
 
 		aniso_variables variables;
@@ -422,22 +429,12 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 		J[i] = (double*)malloc(3 * sizeof(double));
  	}
 
+ 	compute_F(Ea, PTa, PLa, Nparticles, Mass, Sign, Degeneracy, Baryon, X, F);	// compue F
+
  	// double tolmin = 1.0e-6;								// tolerance for spurious convergence to local min of f = F.F/2 (what does this mean?)
 
- 	// scaled maximum step length allowed in line searches (is this ever updated?)
+	// scaled maximum step length allowed in line searches (is this ever updated?)
 	double stepmax = 100. * fmax(sqrt(X[0]*X[0] + X[1]*X[1] + X[2]*X[2]), 3.);
-
-
-	// ** update this:
-	compute_F(Ea, PTa, PLa, Nparticles, Mass, Sign, Degeneracy, Baryon, X, F);	// compute F
-
-
-	gsl_vector *x = gsl_vector_alloc(3);					// holds dX
-    gsl_permutation *p = gsl_permutation_alloc(3);			// permutation vector
-
-#ifndef ABORT_GSL
-    gsl_set_error_handler_off();
-#endif
 
 
 	for(int n = 0; n < N_max; n++)							// newton iteration loop
@@ -456,10 +453,7 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 	    	F[i] *= -1.;
 	    }
 
-
-	    // how to stop exit via gsl error?..
 	    int s;
-
    		gsl_matrix_view A = gsl_matrix_view_array(J_gsl, 3, 3);
     	gsl_vector_view b = gsl_vector_view_array(F, 3);
        	gsl_linalg_LU_decomp(&A.matrix, p, &s);
@@ -510,10 +504,9 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 			gsl_permutation_free(p);
        		gsl_vector_free(x);
 
-			return variables;								// solution failed
+			return variables;								// solution failed (unphysical)
 		}
-
-		if(dX_abs <= tol_dX && F_abs <= tol_F)				// check for convergence
+		else if(dX_abs <= tol_dX && F_abs <= tol_F)			// check for convergence
 		{
 			aniso_variables variables;
 			variables.lambda = X[0];
@@ -522,13 +515,7 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 			variables.did_not_find_solution = 0;
 			variables.number_of_iterations = n + 1;
 
-			// printf("Lambda = %lf\n", X[0]);
-			// printf("aT = %lf\n", X[1]);
-			// printf("aL = %lf\n", X[2]);
-			// printf("steps = %d\n", n + 1);
-			// exit(-1);
-
-			free_2D(J, 3);
+   			free_2D(J, 3);
 			gsl_permutation_free(p);
    			gsl_vector_free(x);
 
@@ -536,16 +523,12 @@ aniso_variables find_anisotropic_variables(double E, double P, double pl, double
 		}
 	}	// newton iteration (n)
 
-#ifdef FLAGS
-	printf("find_anisotropic_variables flag: exceeded max number of iterations on (lambda_0, aT_0, aL_0) = (%lf, %lf, %lf) --> X = (%lf, %lf, %lf)\n", lambda_0, aT_0, aL_0, X[0], X[1], X[2]);
-#endif
-
 	aniso_variables variables;
-	variables.lambda = lambda_0;
+	variables.lambda = lambda_0;							// try setting to T,1,1
 	variables.aT = aT_0;
 	variables.aL = aL_0;
 	variables.did_not_find_solution = 1;
-	variables.number_of_iterations = N_max;
+	variables.number_of_iterations = N_max;					// solution failed to converge (use previous guess)
 
 	free_2D(J, 3);
 	gsl_permutation_free(p);

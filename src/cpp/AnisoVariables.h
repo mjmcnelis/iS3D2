@@ -2,7 +2,7 @@
 #ifndef ANISOVARIABLES_H_
 #define ANISOVARIABLES_H_
 
-const int N_max = 100;				// max number of iterations
+const int N_max = 20;				// max number of iterations
 const int partial_backtracks = 20;	// max number of partial backtracks (default = 20)
 const double tol_dX = 1.e-4;		// tolerance error for dX (1.e-4)
 const double tol_F = 1.e-4;			// tolerance error for F
@@ -99,7 +99,7 @@ typedef struct
 
 } famod_coefficient;
 
-aniso_variables find_anisotropic_variables(double E, double P, double pl, double pt, double lambda_0, double aT_0, double aL_0, int Nparticles, double *Mass, double *Sign, double *Degeneracy, double *Baryon);
+aniso_variables find_anisotropic_variables(double E, double pl, double pt, double lambda_0, double aT_0, double aL_0, int Nparticles, double *Mass, double *Sign, double *Degeneracy, double *Baryon);
 
 famod_coefficient compute_famod_coefficient(double lambda, double aT, double aL, int Nparticles, double *Mass, double *Sign, double *Degeneracy, double *Baryon);
 
