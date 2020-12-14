@@ -1481,9 +1481,6 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double 
     #endif
 
 
-      continue;
-
-
       for(long ipart = 0; ipart < npart; ipart++)   // loop over chosen particles
       {
         long iS0D = pT_tab_length * ipart;
