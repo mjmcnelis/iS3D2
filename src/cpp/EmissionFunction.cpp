@@ -1215,7 +1215,7 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
           }
           case 5:
           {
-            calculate_dN_pTdpTdphidy_famod(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, gla, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
+            calculate_dN_pTdpTdphidy_famod(Mass, Sign, Degeneracy, Baryon, T, P, E, tau, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
             break;
           }
           default:
@@ -1236,14 +1236,19 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
       {
         if(OVERSAMPLE)
         {
-          // this does not take into account famod yield yet...
           // estimate average particle yield
           double Ntotal = calculate_total_yield(Equilibrium_Density, Bulk_Density, Diffusion_Density, T, P, E, tau, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, df_data, gla);
 
           Nevents = (long)min(ceil(MIN_NUM_HADRONS / Ntotal), MAX_NUM_SAMPLES);   // number of events to sample
+
+          printf("\nSampling %ld particlization events...\n\n", Nevents);
+        }
+        else
+        {
+          printf("\nSampling 1 particlization event...\n\n");
         }
 
-        printf("\nSampling %ld particlization event(s)...\n\n", Nevents);
+
 
         particle_event_list.resize(Nevents);
 
@@ -1259,8 +1264,8 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
           }
           case 5:
           {
-            printf("calculate_spectra error: no sampling routine for famod yet\n"); // should be a new version for aniso hydro
-            exit(-1);
+            sample_dN_pTdpTdphidy_famod(Mass, Sign, Degeneracy, Baryon, MCID, T, P, E, tau, x, y, eta, ux, uy, un, dat, dax, day, dan, pixx, pixy, pixn, piyy, piyn, bulkPi, muB, nB, Vx, Vy, Vn, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
+
             break;
           }
           default:

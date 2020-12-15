@@ -1046,7 +1046,7 @@ void EmissionFunctionArray::calculate_dN_pTdpTdphidy_feqmod(double *Mass, double
 
 
 
-void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, Gauss_Laguerre * laguerre, int Nparticles, double *Mass_PDG, double *Sign_PDG, double *Degeneracy_PDG, double *Baryon_PDG)
+void EmissionFunctionArray::calculate_dN_pTdpTdphidy_famod(double *Mass, double *Sign, double *Degeneracy, double *Baryon, double *T_fo, double *P_fo, double *E_fo, double *tau_fo, double *eta_fo, double *ux_fo, double *uy_fo, double *un_fo, double *dat_fo, double *dax_fo, double *day_fo, double *dan_fo, double *pixx_fo, double *pixy_fo, double *pixn_fo, double *piyy_fo, double *piyn_fo, double *bulkPi_fo, double *muB_fo, double *nB_fo, double *Vx_fo, double *Vy_fo, double *Vn_fo, int Nparticles, double *Mass_PDG, double *Sign_PDG, double *Degeneracy_PDG, double *Baryon_PDG)
 {
   double prefactor = pow(2.0 * M_PI * hbarC, -3);
 

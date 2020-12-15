@@ -347,6 +347,8 @@ deltaf_coefficients Deltaf_Data::cubic_spline(double T, double E, double P, doub
     case 2: // RTA Chapman-Enskog expansion
     case 3: // PTM modified equilibrium distribution
     {
+      chapman_enskog:
+
       // undo the temperature power scaling of coefficients
       double T4 = T * T * T * T;
 
@@ -382,7 +384,9 @@ deltaf_coefficients Deltaf_Data::cubic_spline(double T, double E, double P, doub
     }
     case 5: // PTM modified anisotropic distribution
     {
-      break;  // famod doesn't use these coefficients
+      goto chapman_enskog;    // for estimating total particle yield in sampler
+
+      break;
     }
     default:
     {
@@ -459,6 +463,8 @@ deltaf_coefficients Deltaf_Data::bilinear_interpolation(double T, double muB, do
     case 2:
     case 3:
     {
+      chapman_enskog:
+
       double T3 = T * T * T;
       double T4 = T3 * T;
 
@@ -476,9 +482,15 @@ deltaf_coefficients Deltaf_Data::bilinear_interpolation(double T, double muB, do
       printf("Bilinear interpolation error: Jonah df doesn't work for nonzero muB. Exiting..\n");
       exit(-1);
     }
+    case 5:
+    {
+      goto chapman_enskog;    // for estimating total particle yield in sampler
+
+      break;
+    }
     default:
     {
-      printf("Bilinear interpolation error: choose df_mode = (1,2,3). Exiting..\n");
+      printf("Bilinear interpolation error: choose df_mode = (1,2,3,5). Exiting..\n");
       exit(-1);
     }
   }
@@ -528,7 +540,7 @@ void Deltaf_Data::test_df_coefficients(double bulkPi_over_P)
     printf("\nTesting Grad 14-moment df coefficients for Pi/Peq = %.3f\n", bulkPi_over_P);
     printf("\n(c0, c1, c2, c3, c4, shear14) = (%lf, %lf, %lf, %lf, %lf, %lf)\n", df.c0, df.c1, df.c2, df.c3, df.c4, df.shear14_coeff);
   }
-  else if(df_mode == 2 || df_mode == 3)
+  else if(df_mode == 2 || df_mode == 3 || df_mode == 5)
   {
     printf("\nTesting RTA Chapman-Enskog (or PTM) df coefficients for Pi/Peq = %.3f\n", bulkPi_over_P);
     printf("\n(F, G, betabulk, betaV, betapi) = (%lf, %lf, %lf, %lf, %lf)\n", df.F, df.G, df.betabulk, df.betaV, df.betapi);
@@ -625,8 +637,10 @@ void Deltaf_Data::compute_particle_densities(particle_info * particle_data, int 
         break;
       }
       case 2: // Chapman-Enskog
-      case 3: // Modified (Mike)
+      case 3: // PTM modified equilibrium distribution
       {
+        chapman_enskog:
+
         double F = df.F;
         double G = df.G;
         double betabulk = df.betabulk;
@@ -651,14 +665,23 @@ void Deltaf_Data::compute_particle_densities(particle_info * particle_data, int 
       }
       case 5: // PTM modified anisotropic distribution
       {
+        goto chapman_enskog;    // for estimating total particle yield in sampler
+
         break;
       }
       default:
       {
-        cout << "Please choose df_mode = (1,2,3,4,5) in parameters.dat" << endl;
+        printf("Please choose df_mode = (1,2,3,4,5) in parameters.dat\n");
         exit(-1);
       }
     } // df_mode
+
+    // if(i == 1)
+    // {
+    //   printf("neq = %lf\t(m = %lf)\n", neq, mass);
+    //   printf("dn_bulk = %lf\n", dn_bulk);
+    //   printf("dn_diff = %lf\n", dn_diff);
+    // }
 
     particle_data[i].equilibrium_density = neq;
     particle_data[i].bulk_density = dn_bulk;
