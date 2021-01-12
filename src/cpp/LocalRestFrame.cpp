@@ -21,8 +21,8 @@ Milne_Basis::Milne_Basis(double ut, double ux, double uy, double un, double uper
 
     Xt = uperp * coshL;
     Xx = 1;
-    Xn = uperp * sinhL / tau;
     Xy = 0;
+    Xn = uperp * sinhL / tau;
 
     Yx = 0;
     Yy = 1;

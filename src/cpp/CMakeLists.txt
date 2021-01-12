@@ -1,18 +1,21 @@
 set (SOURCES
-    arsenal.cpp
-    deltafReader.cpp
-    emissionfunction.cpp
-    emissionfunction_polzn_kernels.cpp
-    emissionfunction_resonance_decays.cpp
-    emissionfunction_sampling_kernels.cpp
-    emissionfunction_smooth_kernels.cpp
-    gaussThermal.cpp
+    AnisoVariables.cpp
+    Arsenal.cpp
+    BinSampledParticle.cpp
+    DeltafData.cpp
+    EmissionFunction.cpp
+    GaussThermal.cpp
     iS3D.cpp
+    LocalRestFrame.cpp
+    Main.cpp
+    Momentum.cpp
+    MomentumSpectra.cpp
     ParameterReader.cpp
+    ParticleSampler.cpp
+    Polarization.cpp
     readindata.cpp
-    RuniS3D.cpp
+    SpacetimeDistribution.cpp
     Table.cpp
-    viscous_correction.cpp
     )
 
 add_library(iS3D_lib SHARED ${SOURCES})
