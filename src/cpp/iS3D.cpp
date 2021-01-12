@@ -261,9 +261,8 @@ void IS3D::run_particlization(int fo_from_file)
   // emission function class (continuous or sampled particle spectra)
   EmissionFunctionArray efa(paraRdr, &chosen_particles, &pT_tab, &phi_tab, &y_tab, &eta_tab, particle_data, Nparticle, surf_ptr, FO_length, df_data);
 
-  std::vector<Sampled_Particle> particle_event_list_in;   // sampled particle list (JETSCAPE requires one particle list per CPU thread)
-  efa.calculate_spectra(particle_event_list_in);          // compute particle spectra from Cooper-Frye formula
-
+  std::vector<std::vector<Sampled_Particle>> particle_event_list_in;    // sampled particle lists (JETSCAPE)
+  efa.calculate_spectra(particle_event_list_in);                        // compute particle spectra from Cooper-Frye formula
 
 
   int operation = paraRdr->getVal("operation");
@@ -271,11 +270,10 @@ void IS3D::run_particlization(int fo_from_file)
   if(operation == 2)
   {
     printf("\nCopying final particle list to memory (JETSCAPE)\n");
-    printf("Particle list contains %ld particles\n", particle_event_list_in.size());
+    printf("Event particle list contains %ld events\n", particle_event_list_in.size());
 
-    final_particles_ = particle_event_list_in;    // store sampled particle list in memory to pass to afterburner module in JETSCAPE
+    final_particles_ = particle_event_list_in;                    // store particlization events in memory to pass to afterburner module in JETSCAPE
   }
-
 
   delete paraRdr;                                                 // delete pointers
   delete [] surf_ptr;

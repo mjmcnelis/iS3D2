@@ -5,10 +5,11 @@
 #include <sstream>
 #include <stdlib.h>
 #include <cmath>
-#include<cpuid.h>
+#include <cpuid.h>
 #include <iomanip>
 #include <cstdarg>
 #include <stdio.h>
+#include "Macros.h"
 #include "Arsenal.h"
 
 using namespace std;
@@ -20,6 +21,7 @@ void printline()
 
 void print_processor()
 {
+#ifdef PRINT_PROCESSOR
   char CPUBrandString[0x40];              // copied this routine online
   unsigned int CPUInfo[4] = {0,0,0,0};
 
@@ -41,6 +43,7 @@ void print_processor()
   }
 
   printf("\n\nProcessor = %s\n\n", CPUBrandString);
+#endif
 }
 
 

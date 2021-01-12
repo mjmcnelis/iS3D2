@@ -978,7 +978,7 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
 
 
   //*********************************************************************************************
-  void EmissionFunctionArray::calculate_spectra(std::vector<Sampled_Particle> &particle_event_list_in)
+  void EmissionFunctionArray::calculate_spectra(std::vector<std::vector<Sampled_Particle>> &particle_event_list_in)
   {
     printf("\n\nRunning particlization with %s\n\n", df_correction.c_str());
 
@@ -1252,6 +1252,7 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
 
         particle_event_list.resize(Nevents);
 
+
         switch(DF_MODE)
         {
           case 1:
@@ -1289,7 +1290,7 @@ EmissionFunctionArray::EmissionFunctionArray(ParameterReader* paraRdr_in, Table*
           write_particle_list_OSC();                      // write OSCAR particle list to file (if not using JETSCAPE)
         }
 
-        particle_event_list_in = particle_event_list[0];  // JETSCAPE assigns one emission event per CPU thread (set test_sampler = oversample = 0)
+        particle_event_list_in = particle_event_list;     // store particlization events
 
         break;
       }

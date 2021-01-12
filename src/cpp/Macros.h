@@ -6,7 +6,7 @@
 
 // #define PRINT_PARAMETERS    // option to print the runtime parameters (useful for debugging)
 
-#define FLAGS				// option to print warnings during runtime
+// #define FLAGS				// option to print warnings during runtime
 
 // #define PRINT_PROCESSOR		// option to print the processor you're using (for benchmarking)
 
@@ -15,6 +15,8 @@
 #define MONITOR_FAMOD			// monitor breakdown of famod and reconstruction of anisotropic variables (turn off for OpenMP or real runs)
 
 // maybe I should make a JETSCAPE macro...
+
+// would defining any of these macros conflict with the ones already defined in VAH??
 
 // need to write in dependencies?
 
