@@ -1168,6 +1168,8 @@ void EmissionFunctionArray::sample_dN_pTdpTdphidy_famod(double *Mass, double *Si
   double aT_prev;
   double aL_prev;
   bool previous_reconstruction_success = false;
+  long reconstruction_fail = 0;
+  long plpt_negative = 0;
 
   long acceptances = 0;               // for benchmarking momentum sampling efficiency
   long samples = 0;
@@ -1331,12 +1333,13 @@ void EmissionFunctionArray::sample_dN_pTdpTdphidy_famod(double *Mass, double *Si
     if(pl < 0 || pt < 0)                    // don't bother reconstructing anisotropic variables
     {
       fa_famod_breaks_down = true;          // fa breaks down (and so will famod)
+      plpt_negative++;
     }
     else                                    // reconstruct anisotropic variables
     {
       if(previous_reconstruction_success)
       {
-        lambda = lambda_prev;               // use previous values as initial guess
+        lambda = lambda_prev;               // use previous values as initial guess (if last reconstruction succeeded)
         aT = aT_prev;
         aL = aL_prev;
       }
@@ -1345,36 +1348,45 @@ void EmissionFunctionArray::sample_dN_pTdpTdphidy_famod(double *Mass, double *Si
 
       aniso_variables X_aniso = find_anisotropic_variables(E, pl, pt, lambda, aT, aL, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
 
-      if(X_aniso.did_not_find_solution && previous_reconstruction_success)
+      if(X_aniso.did_not_find_solution)
       {
-        lambda = T;                         // try equilibrium initial guess in case first reconstruction attempt fails
-        aT = 1;
-        aL = 1;
-
-        X_aniso = find_anisotropic_variables(E, pl, pt, lambda, aT, aL, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
-
-        if(X_aniso.did_not_find_solution)
+        if(previous_reconstruction_success)
         {
-          fa_famod_breaks_down = true;      // fa breaks down (and so will famod)
+          lambda = T;                         // try again, this time with equilibrium initial guess (in case reconstruction attempt fails)
+          aT = 1;
+          aL = 1;
 
-          previous_reconstruction_success = false;
+          X_aniso = find_anisotropic_variables(E, pl, pt, lambda, aT, aL, Nparticles, Mass_PDG, Sign_PDG, Degeneracy_PDG, Baryon_PDG);
+
+          if(X_aniso.did_not_find_solution)
+          {
+            fa_famod_breaks_down = true;      // fa breaks down (and so will famod)
+            previous_reconstruction_success = false;
+            reconstruction_fail++;
+          }
+          else
+          {
+            lambda = X_aniso.lambda;          // get the solution (reconstruction was successful)
+            aT = X_aniso.aT;
+            aL = X_aniso.aL;
+
+            lambda_prev = lambda;             // set initial guess for next reconstruction
+            aT_prev = aT;
+            aL_prev = aL;
+
+            previous_reconstruction_success = true;
+          }
         }
         else
         {
-          lambda = X_aniso.lambda;          // get the solution
-          aT = X_aniso.aT;
-          aL = X_aniso.aL;
-
-          lambda_prev = lambda;             // set initial guess for next reconstruction
-          aT_prev = aT;
-          aL_prev = aL;
-
-          previous_reconstruction_success = true;
+          fa_famod_breaks_down = true;      // fa breaks down (and so will famod)
+          previous_reconstruction_success = false;
+          reconstruction_fail++;
         }
       }
       else
       {
-        lambda = X_aniso.lambda;            // get the solution
+        lambda = X_aniso.lambda;            // get the solution (reconstruction was successful)
         aT = X_aniso.aT;
         aL = X_aniso.aL;
 
@@ -1609,6 +1621,9 @@ void EmissionFunctionArray::sample_dN_pTdpTdphidy_famod(double *Mass, double *Si
   } // freezeout cells (icell)
 
   printf("\nMomentum sampling efficiency = %f %%\n", (float)(100.0 * (double)acceptances / (double)samples));
+
+  printf("pl went negative for %ld / %ld cells\n\n", plpt_negative, FO_length);
+  printf("Number of reconstruction failures = %ld\n", reconstruction_fail);
 }
 
 
