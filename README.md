@@ -1,4 +1,37 @@
-iS3D (c) Derek Everett, Mike McNelis, Sameed Pervaiz and Lipei Du.
+**iS3D2 (c) Derek Everett, Mike McNelis, Sameed Pervaiz, Matthew Golden and Lipei Du**
+
+Created on 2/13/2018 by Derek Everett\
+Last edited on 5/13/2021 by Mike McNelis
+
+## Summary
+A Monte Carlo simulation that samples hadrons from the particlization stage of heavy-ion collisions. 
+
+This repository is my updated version of the [iS3D](https://github.com/derekeverett/iS3D) code, which was developed from the particle sampler [iSS](https://github.com/chunshen1987/iSS).
+
+The code reads in a freezeout surface from the preceding fluid dynamic stage and samples particles from the Cooper-Frye formula using one of five df corrections:
+
+    1) Grad 14-moment approximation
+    2) RTA Chapman-Enskog expansion
+    3) PTM equilibrium distribution
+    4) PTB equilibrium distribution
+    5) PTMA anisotropic distribution
+
+The shear stress, bulk pressure, baryon chemical potential and baryon diffusion can be turned on or off during runtime.
+
+One can also integrate the continuous Cooper-Frye formula to obtain the momentum spectra or spacetime distributions. 
+
+
+## References
+
+If you use this code, please cite the following papers:
+
+    M. McNelis, D. Everett and U. Heinz, Comput. Phys. Commun. 228 (2021) 107604
+    C. Shen, Z. Qiu, H. Song, J. Bernhard, S. Bass and U. Heinz, Comput. Phys. Commun. 199 (2016) 61-85
+    
+
+
+
+
 
 This code can read in a freeze out surface from 3+1D viscous hydro or anisotropic
 viscous hydro and calculate 3D smooth particle spectra or a sampled particle list.
