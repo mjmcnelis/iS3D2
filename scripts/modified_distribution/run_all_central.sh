@@ -31,21 +31,21 @@ cd scripts/modified_distribution
 # sh run_modified_distribution_central.sh small ptb bulk
 # sh run_modified_distribution_central.sh small ptb shear_bulk
 
-sh run_modified_distribution_central.sh large grad none
-sh run_modified_distribution_central.sh large grad shear
-sh run_modified_distribution_central.sh large grad bulk
-sh run_modified_distribution_central.sh large grad shear_bulk
+# sh run_modified_distribution_central.sh large grad none
+# sh run_modified_distribution_central.sh large grad shear
+# sh run_modified_distribution_central.sh large grad bulk
+# sh run_modified_distribution_central.sh large grad shear_bulk
 
-sh run_modified_distribution_central.sh large ce shear
-sh run_modified_distribution_central.sh large ce bulk
-sh run_modified_distribution_central.sh large ce shear_bulk
+# sh run_modified_distribution_central.sh large ce shear
+# sh run_modified_distribution_central.sh large ce bulk
+# sh run_modified_distribution_central.sh large ce shear_bulk
 
-sh run_modified_distribution_central.sh large ptm shear
-sh run_modified_distribution_central.sh large ptm bulk
+# sh run_modified_distribution_central.sh large ptm shear
+# sh run_modified_distribution_central.sh large ptm bulk
 sh run_modified_distribution_central.sh large ptm shear_bulk
 
-sh run_modified_distribution_central.sh large ptb shear
-sh run_modified_distribution_central.sh large ptb bulk
+# sh run_modified_distribution_central.sh large ptb shear
+# sh run_modified_distribution_central.sh large ptb bulk
 sh run_modified_distribution_central.sh large ptb shear_bulk
 
 
