@@ -3,6 +3,7 @@
 Created on 2/13/2018 by Derek Everett\
 Last edited on 5/13/2021 by Mike McNelis
 
+
 ## Summary
 A Monte Carlo simulation that samples hadrons from the particlization stage of heavy-ion collisions. 
 
@@ -16,9 +17,9 @@ The code reads in a freezeout surface from the preceding fluid dynamic stage and
     4) PTB equilibrium distribution
     5) PTMA anisotropic distribution
 
-The shear stress, bulk pressure, baryon chemical potential and baryon diffusion can be turned on or off during runtime.
+The shear stress, bulk pressure and baryon chemical potential / diffusion can be turned on or off during runtime.
 
-One can also integrate the continuous Cooper-Frye formula to obtain the momentum spectra or spacetime distributions. 
+One can also integrate the Cooper-Frye formula to obtain the continuous momentum spectra or spacetime distributions. 
 
 
 ## References
@@ -27,7 +28,43 @@ If you use this code, please cite the following papers:
 
     M. McNelis, D. Everett and U. Heinz, Comput. Phys. Commun. 228 (2021) 107604
     C. Shen, Z. Qiu, H. Song, J. Bernhard, S. Bass and U. Heinz, Comput. Phys. Commun. 199 (2016) 61-85
+
+
+## Running the code
+
+The default makefile in `src/cpp/GNUmakefile` uses the g++ compiler, which is what we use for particle sampling.
+
+To compile and run iS3D, do either
+
+    sh cleanMakeCPU.sh
+    ./iS3D.e
     
+or
+
+    sh particlization.sh
+
+The results from the simulation are stored in `results`.
+
+To parallelize the continuous Cooper-Frye formula on OpenMP, edit the makefile to use the icpc compiler with the -qopenmp flag. Then compile and run iS3D on `s` threads by doing
+
+    sh cleanMakeCPU.sh
+    sh runCPU.sh s
+
+Note that the particle sampler does not use OpenMP acceleration. 
+
+
+
+
+## Freezeout surface
+
+The input freezeout surface file in `input/surface.dat` must have one of the three formats to be read in correct
+
+The 
+
+
+Turning on the will require
+
+
 
 
 
