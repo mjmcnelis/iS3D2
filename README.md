@@ -9,7 +9,7 @@ A Monte Carlo simulation that samples hadrons from the particlization stage of h
 
 This repository is my updated version of the [iS3D](https://github.com/derekeverett/iS3D) code, which was developed from the particle sampler [iSS](https://github.com/chunshen1987/iSS).
 
-The code reads in a freezeout surface from the preceding fluid dynamic stage and samples particles from the Cooper-Frye formula using one of five df corrections:
+The code reads in a freezeout surface from the preceding hydrodynamic module and samples particles from the Cooper-Frye formula using one of five df corrections:
 
     1) Grad 14-moment approximation
     2) RTA Chapman-Enskog expansion
@@ -50,19 +50,27 @@ To parallelize the continuous Cooper-Frye formula on OpenMP, edit the makefile t
     sh cleanMakeCPU.sh
     sh runCPU.sh s
 
-Note that the particle sampler does not use OpenMP acceleration. 
+Note: the particle sampler does not use OpenMP acceleration. 
 
 
 
 
 ## Freezeout surface
 
-The input freezeout surface file in `input/surface.dat` must have one of the three formats to be read in correct
+The freezeout surface file in `input/surface.dat` must have one of the following formats to be read in correctly:
 
-The 
+    1 = VAH or CPU VH
+    5 = CPU VH (w/ thermal vorticity)
+    6 = MUSIC (public)
+    7 = HIC-EventGen (or VISHNU)
 
+The parameter `mode` sets the file format that the code expects to read in.
 
-Turning on the will require
+Note: the previous version had many other file
+
+When you run the code, the code prints to screen the format's columns. If your columns do not match, the code will likely crash. 
+
+Turning on the  the will require
 
 
 
