@@ -9,7 +9,7 @@ A Monte Carlo simulation that samples hadrons from the particlization stage of h
 
 This repository is my updated version of the [iS3D](https://github.com/derekeverett/iS3D) code, which was developed from the particle sampler [iSS](https://github.com/chunshen1987/iSS).
 
-The code reads in a freezeout surface from the preceding hydrodynamic module and samples particles from the Cooper-Frye formula using one of five df corrections:
+The code reads in a freezeout surface from the preceding fluid dynamic stage and samples particles from the Cooper-Frye formula using one of five df corrections:
 
     1) Grad 14-moment approximation
     2) RTA Chapman-Enskog expansion
@@ -36,23 +36,16 @@ The default makefile in `src/cpp/GNUmakefile` uses the g++ compiler, which is wh
 
 To compile and run iS3D, do either
 
-    sh cleanMakeCPU.sh
-    ./iS3D.e
-    
-or
-
     sh particlization.sh
 
 The results from the simulation are stored in `results`.
 
-To parallelize the continuous Cooper-Frye formula on OpenMP, edit the makefile to use the icpc compiler with the -qopenmp flag. Then compile and run iS3D on `s` threads by doing
+To parallelize the continuous Cooper-Frye formula on OpenMP, edit the makefile to use the icpc compiler with the -qopenmp flag. Then compile and run iS3D on `X` threads by doing
 
     sh cleanMakeCPU.sh
-    sh runCPU.sh s
+    sh runCPU.sh X
 
 Note: the particle sampler does not use OpenMP acceleration. 
-
-
 
 
 ## Freezeout surface
@@ -64,44 +57,11 @@ The freezeout surface file in `input/surface.dat` must have one of the following
     6 = MUSIC (public)
     7 = HIC-EventGen (or VISHNU)
 
-The parameter `mode` sets the file format that the code expects to read in.
+The code expects to read in the file format set by the parameter `mode`.
 
-Note: the previous version had many other file
+Note: I axed several file formats used by the previous version.
 
-When you run the code, the code prints to screen the format's columns. If your columns do not match, the code will likely crash. 
+During runtime, the code prints the columns required by the freezeout surface reader. If your columns do not match, the code will probably crash. 
 
-Turning on the  the will require
+If you turn on `include_baryon`, the reader assumes there are additional columns related to net baryon charge.
 
-
-
-
-
-
-
-This code can read in a freeze out surface from 3+1D viscous hydro or anisotropic
-viscous hydro and calculate 3D smooth particle spectra or a sampled particle list.
-The structure is based on iSpectra, the Cooper Frye code in the iEBE heavy ion
-event generator (Chun Shen, Zhi Qiu).
-
-to build iS3D, one can do
-
-$ mkdir build && cd build
-$ cmake ..
-$ make
-$ make install
-
-To run iS3D, do
-
-$ ./iS3D
-
-or
-
-$ sh runCPU.sh num_threads
-
-where num_threads is the number of cpu threads.
-
-The freezeout surface is read from input/surface.dat, or from memory depending on how the wrapper is called.
-By default input/surface.dat contains a toy freezeout surface with one cell.
-See parameters.dat for a list of compatible formats.
-
-The results will be written in the results/ directory, so this directory must exist at runtime.
