@@ -32,15 +32,15 @@ If you use this code, please cite the following papers:
 
 ## Running the code
 
-The default makefile in `src/cpp/GNUmakefile` uses the g++ compiler, which is what we use for particle sampling.
+The default makefile `src/cpp/GNUmakefile` uses the g++ compiler, which is what we use for particle sampling.
 
-To compile and run iS3D, do either
+To compile and run iS3D, do
 
     sh particlization.sh
 
 The results from the simulation are stored in `results`.
 
-To parallelize the continuous Cooper-Frye formula on OpenMP, edit the makefile to use the icpc compiler with the -qopenmp flag. Then compile and run iS3D on `X` threads by doing
+To parallelize the continuous Cooper-Frye formula on OpenMP, edit the makefile to use the icpc compiler with the qopenmp flag. Then compile and run iS3D on `X` threads by doing
 
     sh cleanMakeCPU.sh
     sh runCPU.sh X
@@ -50,7 +50,7 @@ Note: the particle sampler does not use OpenMP acceleration.
 
 ## Freezeout surface
 
-The freezeout surface file in `input/surface.dat` must have one of the following formats to be read in correctly:
+The freezeout surface file `input/surface.dat` must have one of the following formats to be read in correctly:
 
     1 = VAH or CPU VH
     5 = CPU VH (w/ thermal vorticity)
@@ -64,4 +64,16 @@ Note: I axed several file formats used by the previous version.
 During runtime, the code prints the columns required by the freezeout surface reader. If your columns do not match, the code will probably crash. 
 
 If you turn on `include_baryon`, the reader assumes there are additional columns related to net baryon charge.
+
+
+## Hadron Resonance Gas 
+
+fill in later
+
+
+## Parameters
+
+fill in later
+
+
 
