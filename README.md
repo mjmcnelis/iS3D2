@@ -72,7 +72,7 @@ The code can use one of three hadron resonance gas (HRG) models corresponding to
 
      1 = UrQMD (v3.3+)
      2 = SMASH
-     3 = SMASH Box
+     3 = SMASH (box)
      
 The HRG model is determined by the parameter `hrg_eos`. It is important that the QCD EoS from the preceding hydrodynamic module is compatible with the HRG EoS at the switching temperature.
 
@@ -90,7 +90,7 @@ which overwrites `chosen_particles.dat` with these particles.
 The particle sampler mode requires all of the particles from the HRG model (except photons). To run the iS3D sampler with the SMASH particles, do 
 
     cd PDG
-    sh chosen_particles.sh smash        # or urqmd, smash_box
+    sh chosen_particles.sh smash        # or urqmd, box
 
 Note: photons should not be listed in `chosen_particles.dat`
 
