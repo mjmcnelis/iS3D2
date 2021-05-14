@@ -1,4 +1,4 @@
-**iS3D2 (c) Derek Everett, Mike McNelis, Sameed Pervaiz, Matthew Golden and Lipei Du**
+**iS3D2 (c) Mike McNelis, Derek Everett, Sameed Pervaiz, Matthew Golden and Lipei Du**
 
 Created on 2/13/2018 by Derek Everett\
 Last edited on 5/13/2021 by Mike McNelis
