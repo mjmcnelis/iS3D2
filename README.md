@@ -68,15 +68,15 @@ If you turn on `include_baryon`, the reader assumes there are additional columns
 
 ## Hadron Resonance Gas 
 
-The code can use one of three hadron resonance gas (HRG) models corresponding to the subsequent afterburner phase:
+The code uses one of three hadron resonance gases corresponding to the subsequent afterburner phase:
 
      1 = UrQMD (v3.3+)
      2 = SMASH
      3 = SMASH (box)
      
-The HRG model is determined by the parameter `hrg_eos`. It is important that the QCD EoS from the preceding hydrodynamic module is compatible with the HRG EoS at the switching temperature.
+The HRG's composition is controlled by the parameter `hrg_eos`. It is important that the QCD EoS from the preceding hydrodynamic module is compatible with the HRG EoS at the switching temperature.
 
-iS3D will generate the spectra of particles whose MCID is listed in the file `PDG/chosen_particles.dat` (they must be a subset of the HRG model).
+iS3D will generate the spectra of particles whose MCID is listed in the file `PDG/chosen_particles.dat` (they must be a subset of the HRG).
 
 Note: `chosen_particles.dat` should have one blank line eof.
 
@@ -87,7 +87,7 @@ For the continuous spectra mode, you can just select a few particles. To run iS3
 
 which overwrites `chosen_particles.dat` with these particles.
 
-The particle sampler mode requires all of the particles from the HRG model (except photons). To run the iS3D sampler with the SMASH particles, do 
+The particle sampler mode requires all of the particles in the HRG (except photons). To run the iS3D sampler with the SMASH particles, do 
 
     cd PDG
     sh chosen_particles.sh smash        # or urqmd, box
