@@ -59,11 +59,11 @@ The freezeout surface file `input/surface.dat` must have one of the following fo
 
 The code expects to read in the file format set by the parameter `mode`.
 
-Note: I axed several file formats used by the previous version.
-
 During runtime, the code prints the columns required by the freezeout surface reader. If your columns do not match, the code will probably crash. 
 
 If you turn on `include_baryon`, the reader assumes there are additional columns related to net baryon charge.
+
+Note: I axed several file formats used by the previous version.
 
 
 ## Hadron Resonance Gas 
@@ -78,8 +78,6 @@ The HRG's composition is controlled by the parameter `hrg_eos`. It is important 
 
 iS3D will generate the spectra of particles whose MCID is listed in the file `PDG/chosen_particles.dat` (they must be a subset of the HRG).
 
-Note: `chosen_particles.dat` should have one blank line eof.
-
 For the continuous spectra mode, you can just select a few particles. To run iS3D with (pi+, K+, p), do
 
     cd PDG
@@ -91,7 +89,8 @@ The particle sampler mode requires all of the particles in the HRG (except photo
 
     cd PDG
     sh chosen_particles.sh smash        # or urqmd, box
-
+   
+Note: `chosen_particles.dat` should have one blank line eof.\
 Note: photons should not be listed in `chosen_particles.dat`
 
 
