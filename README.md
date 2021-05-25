@@ -7,7 +7,7 @@ Last edited on 5/13/2021 by Mike McNelis
 ## Summary
 A Monte Carlo simulation that samples hadrons from the particlization stage of heavy-ion collisions. 
 
-This repository is my updated version of the [iS3D](https://github.com/derekeverett/iS3D) code, which was developed from the particle sampler [iSS](https://github.com/chunshen1987/iSS).
+This repository is my updated version of the [iS3D](https://github.com/derekeverett/iS3D) code, which Derek and I co-developed from the particle sampler [iSS](https://github.com/chunshen1987/iSS).
 
 The code reads in a freezeout surface from the preceding fluid dynamic stage and samples particles from the Cooper-Frye formula using one of five df corrections:
 
